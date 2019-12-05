@@ -3,9 +3,10 @@ layout: default
 title: Jitesh Doshi
 ---
 
+
+| [About]() | [Blog]() | [Contact]() | [Projects]() | [Tutorials]() |
 ---
-[About]() | [Blog]() | [Contact]() | [Projects]() | [Tutorials]() 
----
+| a | a | a | a | a |
 
 ## A Little bit about me
 
