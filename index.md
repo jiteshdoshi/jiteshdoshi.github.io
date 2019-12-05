@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Jitesh Doshi
 ---
 
 ## Welcome to GitHub Pages
