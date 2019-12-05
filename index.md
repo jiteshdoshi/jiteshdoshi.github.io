@@ -3,7 +3,7 @@ layout: default
 title: Jitesh Doshi
 ---
 
-<p align="center">
+
 
 | [About]() | [Blog]() | [Contact]() | [Projects]() | [Tutorials]() |
 |---|---|---|---|---|
@@ -16,5 +16,5 @@ title: Jitesh Doshi
 - [AutoDock Vina : Tips and Tricks](./vina.html)
 
 
-</p>
+
 [Back](./)
