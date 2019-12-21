@@ -1,0 +1,13 @@
+# main links
+main:
+
+  - title: "About"
+    url: /about/
+  - title: "Blog"
+    url: /blog/
+  - title: "Activities"
+    url: /activities/
+  - title: "Tutorials"
+    url: /tut/
+  - title: "Projects"
+    url: /projects/

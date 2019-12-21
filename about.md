@@ -1,9 +1,8 @@
 ---
-layout: page
+layout: single
 title: About
 permalink: /about/
 ---
 
-```
-vina --config conf.txt --log lig.log
-```
+
+# About Me

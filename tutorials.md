@@ -1,7 +1,8 @@
 ---
-layout: page
+layout: single
 title: "Tutorials"
 permalink: /tut/
 ---
 
-## Computer Aided Drug Designing
+
+1. [Computer-Aided Drug Discovery](cadd.html)
