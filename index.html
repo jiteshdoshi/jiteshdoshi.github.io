@@ -46,7 +46,7 @@
     <!-- Navigation Bar -->
 <nav class="fixed top-0 left-0 right-0 z-50 bg-[#8B6BA3]/50 backdrop-blur shadow-sm py-4 transition-colors duration-300">        <div class="container mx-auto px-6 flex items-center justify-between">
             <a href="#hero" class="flex items-center space-x-3">
-                <img src="images/SN-logo.png" alt="Logo" class="h-10 w-10 rounded-full shadow" />
+                <img src="images/SN-logo.png" alt="Logo" class="h-10 w-10 shadow bg-white" />
                 <span class="text-2xl font-bold text-black">Shraddha Nyati</span>
             </a>
             <div class="hidden md:flex space-x-8 text-gray-600 font-medium">
@@ -72,8 +72,15 @@
     </nav>
 
     <!-- Hero Section -->
-    <section id="hero" class="bg-subtle-gradient min-h-screen flex items-center justify-center pt-20 pb-10">
-        <div class="container mx-auto px-6 text-center">
+    <section id="hero" class="bg-subtle-gradient min-h-screen flex items-center justify-center pt-20 pb-10 relative overflow-hidden">
+        <!-- Background image -->
+        <div class="absolute inset-0 z-0">
+            <img src="images/hero-bg.png" alt="" class="w-full h-full object-cover object-center opacity-40" style="pointer-events:none;">
+            <!-- Transparent overlay -->
+            <div class="absolute inset-0 bg-white/50"></div>
+        </div>
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <div class="inline-block bg-white/60 backdrop-blur-md rounded-2xl p-10 md:p-16 shadow-lg">
             <h1 class="text-5xl md:text-7xl font-bold text-gray-800 leading-tight mb-4">
                 Shraddha Nyati
             </h1>
@@ -83,10 +90,10 @@
             <p class="max-w-2xl mx-auto text-lg md:text-xl text-gray-500 mb-10">
                 Helping you to peel back the layers of your heart and carve out a brighter, more vibrant life through the power of words.
             </p>
-            <a href="#offerings" class="bg-accent text-white font-medium py-3 px-8 rounded-full shadow-lg btn">
+            <a href="#offerings" class="bg-accent text-black font-medium py-3 px-8 rounded-full shadow-lg btn">
                 Explore My Work
             </a>
-        </div>
+            </div>
     </section>
 
     <!-- About Section -->
@@ -119,8 +126,12 @@
                 <!-- Book 1 -->
                 <div class="bg-white rounded-2xl shadow-lg p-8 btn">
                     <!-- Book cover for "From Ring to Mirror" -->
-                    <img src="images/frtm.JPG" onerror="this.onerror=null;this.src='https://placehold.co/400x550/e4dbf8/8B6BA3?text=From+Ring+to+Mirror';" alt="From Ring to Mirror book cover" class="rounded-lg mb-6 w-full h-auto shadow-md">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">From Ring to Mirror</h3>
+                    <a href="https://www.amazon.com/Ring-Mirror-Journey-Abstract-Destination-ebook/dp/B0793PYCDB/ref=sr_1_1?crid=10VZ5OY1WOKRY&dib=eyJ2IjoiMSJ9.a5pjwXCYip-RNfINLE-qKVrqO7ekqjojwgC0hihZjzMKeXDUmC9Z3y6FqrkhLadQLZMWP8HUDTtAKdZAl3So-BOkaIYn4nijm0lJvcq4A-HfluL8tZFRa_9oAGBHwZ08fNAmOsPKDtmWN1mj_TCLMF2Jzr_vEab0ROYWpgoRFNDvH7OOwnUMCs9YE9cIwK8LlOdYHmKkCmTSwH8M7ew-hX3YLzTLjGZ0sxY4vS6DDhc.FKT2ZethMLoJM_rREeI7J8secPwvjzM2oHSOweqeRew&dib_tag=se&keywords=from+ring+to+mirror&qid=1754599140&sprefix=from+ring+to+mirro%2Caps%2C492&sr=8-1" target="_blank" rel="noopener noreferrer">
+                        <img src="images/frtm.JPG" onerror="this.onerror=null;this.src='https://placehold.co/400x550/e4dbf8/8B6BA3?text=From+Ring+to+Mirror';" alt="From Ring to Mirror book cover" class="rounded-lg mb-6 w-full h-auto shadow-md">
+                    </a>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                        <a href="https://www.amazon.com/Ring-Mirror-Journey-Abstract-Destination-ebook/dp/B0793PYCDB/ref=sr_1_1?crid=10VZ5OY1WOKRY&dib=eyJ2IjoiMSJ9.a5pjwXCYip-RNfINLE-qKVrqO7ekqjojwgC0hihZjzMKeXDUmC9Z3y6FqrkhLadQLZMWP8HUDTtAKdZAl3So-BOkaIYn4nijm0lJvcq4A-HfluL8tZFRa_9oAGBHwZ08fNAmOsPKDtmWN1mj_TCLMF2Jzr_vEab0ROYWpgoRFNDvH7OOwnUMCs9YE9cIwK8LlOdYHmKkCmTSwH8M7ew-hX3YLzTLjGZ0sxY4vS6DDhc.FKT2ZethMLoJM_rREeI7J8secPwvjzM2oHSOweqeRew&dib_tag=se&keywords=from+ring+to+mirror&qid=1754599140&sprefix=from+ring+to+mirro%2Caps%2C492&sr=8-1" target="_blank" rel="noopener noreferrer">From Ring to Mirror</a>
+                    </h3>
                     <p class="text-gray-500 mb-4">A Journey with an Abstract Destination</p>
                     <p class="text-gray-600 mb-6">
                         An emotional tale of love, loss, and the journey of rediscovery. This book delves into the deepest corners of the human heart, exploring the feelings that define us and the strength found in picking up the pieces.
@@ -132,8 +143,12 @@
                 <!-- Book 2 -->
                 <div class="bg-white rounded-2xl shadow-lg p-8 btn">
                     <!-- Book cover for "L.O.B.S.T.E.R." -->
-                    <img src="images/lobster.JPG" onerror="this.onerror=null;this.src='https://placehold.co/400x550/e4dbf8/8B6BA3?text=L.O.B.S.T.E.R.';" alt="L.O.B.S.T.E.R. book cover" class="rounded-lg mb-6 w-full h-auto shadow-md">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">L.O.B.S.T.E.R.</h3>
+                    <a href="https://www.amazon.com/L-B-S-T-R-Shraddha-Nyati-ebook/dp/B095PN4MNL/ref=sr_1_1?crid=NWJAH3T1TC1&dib=eyJ2IjoiMSJ9.v6xocr2Y6geDsW5cNjVPHQ.6_FtcHggH47Knxw7icpYLsq1jEuSTaFDeFa6VIU1vKY&dib_tag=se&keywords=lobster+by+shraddha+nyati&qid=1754599364&sprefix=lobster+b+shraddhya+nyati%2Caps%2C292&sr=8-1" target="_blank" rel="noopener noreferrer">
+                        <img src="images/lobster.JPG" onerror="this.onerror=null;this.src='https://placehold.co/400x550/e4dbf8/8B6BA3?text=L.O.B.S.T.E.R.';" alt="L.O.B.S.T.E.R. book cover" class="rounded-lg mb-6 w-full h-auto shadow-md">
+                    </a>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                        <a href="https://www.amazon.com/L-B-S-T-R-Shraddha-Nyati-ebook/dp/B095PN4MNL/ref=sr_1_1?crid=NWJAH3T1TC1&dib=eyJ2IjoiMSJ9.v6xocr2Y6geDsW5cNjVPHQ.6_FtcHggH47Knxw7icpYLsq1jEuSTaFDeFa6VIU1vKY&dib_tag=se&keywords=lobster+by+shraddha+nyati&qid=1754599364&sprefix=lobster+b+shraddhya+nyati%2Caps%2C292&sr=8-1" target="_blank" rel="noopener noreferrer">L.O.B.S.T.E.R.</a>
+                    </h3>
                     <p class="text-gray-500 mb-4">A story of a different kind of love</p>
                     <p class="text-gray-600 mb-6">
                         This novel explores the complexities of relationships with a unique and thought-provoking perspective. It's a journey into the heart of modern love, its challenges, and its unexpected triumphs.
