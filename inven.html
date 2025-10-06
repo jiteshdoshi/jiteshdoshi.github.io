@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Honey Shelter Inventory (Offline)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Barcode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none;
+        }
+        .main-grid {
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .modal-backdrop { background-color: rgba(0,0,0,0.5); transition: opacity 0.3s ease-in-out; }
+        .modal-content { transition: transform 0.3s ease-in-out; }
+        #reader { width: 100%; border: 2px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
+        #scanner-modal video { width: 100%; height: auto; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="h-screen w-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-amber-500 text-white shadow-md p-4 flex items-center justify-between z-10">
+            <div class="flex items-center space-x-4">
+                <img src="https://static.wixstatic.com/media/311af0_85acadb4f0c246959f774351d0564f08~mv2.png/v1/fill/w_70,h_80,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Logo-png-Dark-Name_edited.png" alt="The Honey Shelter Logo" class="h-12 w-auto">
+                <h1 class="text-2xl font-bold">The Honey Shelter</h1>
+            </div>
+            <div id="app-status" class="text-sm bg-green-500 px-2 py-1 rounded">Offline Ready</div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 main-grid overflow-hidden">
+            <!-- Left Panel: Scanner & Actions -->
+            <div class="bg-white p-4 lg:p-6 flex flex-col overflow-y-auto border-r border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Scanner & Actions</h2>
+
+                <!-- Action Toggle -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-center rounded-lg bg-gray-200 p-1">
+                        <button id="scan-mode-add" class="w-full text-center py-2 px-4 rounded-md text-sm font-medium bg-white text-amber-600 shadow">Add Stock</button>
+                        <button id="scan-mode-sell" class="w-full text-center py-2 px-4 rounded-md text-sm font-medium text-gray-500">Record Sale</button>
+                    </div>
+                </div>
+                
+                <!-- Barcode Input -->
+                <div class="mb-4">
+                    <label for="barcode-input" class="block text-sm font-medium text-gray-600 mb-1">Barcode</label>
+                    <div class="relative">
+                        <input type="text" id="barcode-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition pr-10" placeholder="Enter or scan barcode...">
+                        <button id="scan-camera-btn" title="Scan with Camera" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-amber-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quantity Input -->
+                 <div class="mb-4">
+                    <label for="quantity-input" class="block text-sm font-medium text-gray-600 mb-1">Quantity</label>
+                    <input type="number" id="quantity-input" value="1" min="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                </div>
+                
+                <button id="submit-scan" class="w-full bg-amber-500 text-white py-3 rounded-lg font-semibold hover:bg-amber-600 transition shadow-sm">Submit</button>
+                <div id="scan-status" class="mt-3 text-center text-sm min-h-[20px]"></div>
+
+                <hr class="my-6 border-t border-gray-200">
+
+                <div class="space-y-3">
+                    <button id="add-new-product-btn" class="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"> + Add New Product </button>
+                    <button id="set-initial-stock-btn" class="w-full bg-sky-600 text-white py-3 rounded-lg font-semibold hover:bg-sky-700 transition"> Set Initial Stock </button>
+                    <button id="reset-inventory-btn" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"> Reset All Inventory </button>
+                </div>
+
+                <hr class="my-6 border-t border-gray-200">
+
+                <div class="space-y-3">
+                    <button id="export-data-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition">Export Session Data</button>
+                    <button id="import-data-btn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Import Session Data</button>
+                    <input type="file" id="import-file-input" class="hidden" accept=".json">
+                </div>
+
+            </div>
+
+            <!-- Right Panel: Tabs for Inventory & Sales -->
+            <div class="flex-1 flex flex-col bg-gray-50 overflow-y-auto">
+                <!-- Tab Headers -->
+                <div class="flex border-b border-gray-200 bg-white sticky top-0">
+                    <button data-tab="inventory" class="tab-btn flex-1 py-3 px-4 text-center font-medium text-amber-600 border-b-2 border-amber-500"> Inventory </button>
+                    <button data-tab="sales" class="tab-btn flex-1 py-3 px-4 text-center font-medium text-gray-500"> Sales Log </button>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="p-4 lg:p-6">
+                    <!-- Inventory Tab -->
+                    <div id="inventory-content" class="tab-content">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-700">Product List</h3>
+                            <input type="text" id="inventory-search" placeholder="Search products..." class="w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+                        <div id="inventory-table-container" class="bg-white rounded-lg shadow overflow-hidden"></div>
+                    </div>
+
+                    <!-- Sales Tab -->
+                    <div id="sales-content" class="tab-content hidden">
+                         <h3 class="text-xl font-semibold text-gray-700 mb-4">Recent Sales</h3>
+                         <div id="sales-table-container" class="bg-white rounded-lg shadow overflow-hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- All Modals (same as before) -->
+    <div id="scanner-modal" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80 p-4 hidden"><div class="bg-white rounded-lg p-4 w-full max-w-md"><h2 class="text-lg font-bold text-center mb-2">Scan Barcode</h2><div id="reader"></div><div id="scanner-status-message" class="text-center text-sm text-gray-600 mt-2 min-h-[20px]"></div></div><button id="stop-scanner-btn" class="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg font-semibold">Cancel</button></div>
+    <div id="product-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-md p-6 lg:p-8 transform scale-95"><h2 id="modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add New Product</h2><form id="product-form"><input type="hidden" id="product-id"><div class="mb-4"><label for="product-name" class="block text-sm font-medium text-gray-600 mb-1">Product Name</label><input type="text" id="product-name" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="mb-4"><label for="product-variant" class="block text-sm font-medium text-gray-600 mb-1">Variant (e.g., 200g, 450g)</label><input type="text" id="product-variant" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="mb-4"><label for="product-barcode" class="block text-sm font-medium text-gray-600 mb-1">Barcode</label><input type="text" id="product-barcode" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="grid grid-cols-2 gap-4 mb-6"><div><label for="product-price" class="block text-sm font-medium text-gray-600 mb-1">Price ($)</label><input type="number" id="product-price" step="0.01" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div><label for="product-quantity" class="block text-sm font-medium text-gray-600 mb-1">Stock Quantity</label><input type="number" id="product-quantity" class="w-full p-3 border border-gray-300 rounded-lg" required></div></div><div class="flex justify-end space-x-3"><button type="button" id="cancel-modal-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="submit" class="px-6 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition">Save Product</button></div></form></div></div>
+    <div id="delete-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-sm p-6 transform scale-95"><h2 class="text-xl font-bold text-gray-800">Confirm Deletion</h2><p id="delete-message" class="text-gray-600 my-4">Are you sure? This cannot be undone.</p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-delete-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="confirm-delete-btn" class="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition">Delete</button></div></div></div>
+    <div id="initial-stock-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-2xl transform scale-95"><div class="p-6 border-b"><h2 class="text-2xl font-bold text-gray-800">Set Initial Stock Levels</h2><p class="text-sm text-gray-500 mt-1">Enter the starting quantity for each product.</p></div><form id="initial-stock-form" class="max-h-[60vh] overflow-y-auto p-6"><div id="initial-stock-list" class="space-y-3"><div class="text-center text-gray-500 py-4">Loading products...</div></div></form><div class="flex justify-end space-x-3 p-6 bg-gray-50 rounded-b-xl border-t"><button type="button" id="cancel-initial-stock-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="save-initial-stock-btn" class="px-6 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition">Save All Quantities</button></div></div></div>
+    <div id="reset-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-sm p-6 transform scale-95"><h2 class="text-xl font-bold text-gray-800">Confirm Reset</h2><p class="text-gray-600 my-4">Reset all quantities to zero? This cannot be undone.</p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-reset-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="confirm-reset-btn" class="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition">Yes, Reset All</button></div></div></div>
+
+    <script type="module">
+        // --- INITIAL PRODUCT DATA ---
+        const initialProducts = [
+            { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', price: 2.70, quantity: 0 },
+            { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', price: 5.00, quantity: 0 },
+            { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', price: 2.75, quantity: 0 },
+            { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', price: 5.20, quantity: 0 },
+            { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', price: 3.00, quantity: 0 },
+            { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', price: 5.80, quantity: 0 },
+            { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', price: 15.00, quantity: 0 },
+            { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', price: 28.00, quantity: 0 },
+            { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', price: 3.20, quantity: 0 },
+            { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', price: 6.00, quantity: 0 },
+            { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', price: 5.00, quantity: 0 },
+            { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', price: 9.50, quantity: 0 },
+            { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', price: 3.10, quantity: 0 },
+            { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', price: 5.90, quantity: 0 },
+            { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', price: 4.50, quantity: 0 },
+            { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', price: 8.00, quantity: 0 },
+            { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', price: 2.50, quantity: 0 },
+            { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', price: 4.80, quantity: 0 },
+            { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', price: 3.50, quantity: 0 },
+            { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', price: 6.50, quantity: 0 },
+            { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', price: 2.60, quantity: 0 },
+            { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', price: 4.90, quantity: 0 },
+            { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', price: 2.90, quantity: 0 },
+            { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', price: 5.50, quantity: 0 },
+            { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', price: 2.80, quantity: 0 },
+            { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', price: 5.30, quantity: 0 },
+        ];
+        
+        // --- UI ELEMENT SELECTORS ---
+        const allUI = {};
+        ['inventory-table-container', 'sales-table-container', 'inventory-search', 'product-modal', 'product-form', 'modal-title', 'cancel-modal-btn', 'delete-modal', 'cancel-delete-btn', 'confirm-delete-btn', 'initial-stock-modal', 'initial-stock-list', 'cancel-initial-stock-btn', 'save-initial-stock-btn', 'reset-modal', 'cancel-reset-btn', 'confirm-reset-btn', 'add-new-product-btn', 'set-initial-stock-btn', 'reset-inventory-btn', 'scan-mode-add', 'scan-mode-sell', 'barcode-input', 'quantity-input', 'submit-scan', 'scan-status', 'scan-camera-btn', 'scanner-modal', 'stop-scanner-btn', 'scanner-status-message', 'export-data-btn', 'import-data-btn', 'import-file-input'].forEach(id => {
+            allUI[id.replace(/-/g, '_')] = document.getElementById(id);
+        });
+
+        let html5QrCode;
+        let allProducts = [];
+        let allSales = [];
+        let scanMode = 'add';
+        let itemToDeleteId = null;
+
+        // --- LOCAL DATA MANAGEMENT ---
+        function loadProducts() { const storedProducts = localStorage.getItem('inventoryApp_products'); if (storedProducts) { allProducts = JSON.parse(storedProducts); } else { allProducts = JSON.parse(JSON.stringify(initialProducts)); saveProducts(); } }
+        function saveProducts() { localStorage.setItem('inventoryApp_products', JSON.stringify(allProducts)); renderInventoryTable(allProducts); }
+        function loadSales() { const storedSales = localStorage.getItem('inventoryApp_sales'); allSales = storedSales ? JSON.parse(storedSales) : []; }
+        function saveSales() { localStorage.setItem('inventoryApp_sales', JSON.stringify(allSales)); renderSalesTable(allSales); }
+        
+        // --- RENDER FUNCTIONS (unchanged) ---
+        function renderInventoryTable(products) { const searchTerm = allUI.inventory_search.value.toLowerCase(); const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm) || p.variant.toLowerCase().includes(searchTerm) || p.code.includes(searchTerm)).sort((a,b) => a.name.localeCompare(b.name)); if (filteredProducts.length === 0) { allUI.inventory_table_container.innerHTML = `<div class="p-8 text-center text-gray-500">No products found.</div>`; return; } allUI.inventory_table_container.innerHTML = `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th scope="col" class="px-6 py-3">Product</th><th scope="col" class="px-6 py-3">Barcode</th><th scope="col" class="px-6 py-3 text-right">Stock</th><th scope="col" class="px-6 py-3 text-right">Price</th><th scope="col" class="px-6 py-3 text-center">Actions</th></tr></thead><tbody>${filteredProducts.map(p => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${p.name} <span class="text-gray-500 text-xs">(${p.variant})</span></td><td class="px-6 py-4 font-mono">${p.code}</td><td class="px-6 py-4 text-right font-semibold ${p.quantity <= 5 ? 'text-red-500' : 'text-gray-800'}">${p.quantity}</td><td class="px-6 py-4 text-right">$${p.price.toFixed(2)}</td><td class="px-6 py-4 text-center"><button class="edit-btn font-medium text-amber-600 hover:underline" data-id="${p.id}">Edit</button><button class="delete-btn font-medium text-red-600 hover:underline ml-4" data-id="${p.id}">Delete</button></td></tr>`).join('')}</tbody></table>`; }
+        function renderSalesTable(sales) { const sortedSales = sales.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); if (sortedSales.length === 0) { allUI.sales_table_container.innerHTML = `<div class="p-8 text-center text-gray-500">No sales recorded yet.</div>`; return; } allUI.sales_table_container.innerHTML = `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th scope="col" class="px-6 py-3">Date</th><th scope="col" class="px-6 py-3">Product</th><th scope="col" class="px-6 py-3 text-right">Qty</th><th scope="col" class="px-6 py-3 text-right">Total</th></tr></thead><tbody>${sortedSales.slice(0, 100).map(s => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-600">${new Date(s.timestamp).toLocaleString()}</td><td class="px-6 py-4 font-medium text-gray-900">${s.product.name} <span class="text-gray-500 text-xs">(${s.product.variant})</span></td><td class="px-6 py-4 text-right">${s.quantity}</td><td class="px-6 py-4 text-right font-semibold">$${(s.quantity * s.product.price).toFixed(2)}</td></tr>`).join('')}</tbody></table>`; }
+        
+        // --- MODAL HANDLING (unchanged) ---
+        function openGenericModal(modalEl) { modalEl.classList.remove('opacity-0', 'pointer-events-none'); modalEl.querySelector('.modal-content').classList.remove('scale-95'); }
+        function closeGenericModal(modalEl) { modalEl.classList.add('opacity-0'); modalEl.querySelector('.modal-content').classList.add('scale-95'); setTimeout(() => { modalEl.classList.add('pointer-events-none'); }, 300); }
+        function openModal(mode, product = null) { allUI.product_form.reset(); if (mode === 'add') { allUI.modal_title.textContent = 'Add New Product'; allUI.product_form['product-id'].value = ''; } else { allUI.modal_title.textContent = 'Edit Product'; allUI.product_form['product-id'].value = product.id; allUI.product_form['product-name'].value = product.name; allUI.product_form['product-variant'].value = product.variant; allUI.product_form['product-barcode'].value = product.code; allUI.product_form['product-price'].value = product.price; allUI.product_form['product-quantity'].value = product.quantity; } openGenericModal(allUI.product_modal); }
+        function closeModal() { closeGenericModal(allUI.product_modal); }
+        function openDeleteModal(productId) { itemToDeleteId = productId; openGenericModal(allUI.delete_modal); }
+        function closeDeleteModal() { closeGenericModal(allUI.delete_modal); itemToDeleteId = null; }
+        
+        // --- CRUD OPERATIONS ---
+        function handleFormSubmit(e) { e.preventDefault(); const form = allUI.product_form; const id = form['product-id'].value; const productData = { name: form['product-name'].value, variant: form['product-variant'].value, code: form['product-barcode'].value, price: parseFloat(form['product-price'].value), quantity: parseInt(form['product-quantity'].value), }; if (id) { const index = allProducts.findIndex(p => p.id === id); if (index !== -1) allProducts[index] = { ...allProducts[index], ...productData }; } else { productData.id = 'prod-' + Date.now(); allProducts.push(productData); } saveProducts(); closeModal(); }
+        function handleDelete() { if (!itemToDeleteId) return; allProducts = allProducts.filter(p => p.id !== itemToDeleteId); saveProducts(); closeDeleteModal(); }
+        
+        // --- SCANNER LOGIC ---
+        function handleScanSubmit() { const barcode = allUI.barcode_input.value.trim(); const quantity = parseInt(allUI.quantity_input.value); if (!barcode || isNaN(quantity) || quantity <= 0) { showScanStatus('Please enter a valid barcode and quantity.', 'error'); return; } const product = allProducts.find(p => p.code === barcode); if (!product) { showScanStatus('Product with this barcode not found.', 'error'); return; } if (scanMode === 'add') { product.quantity += quantity; showScanStatus(`Added ${quantity} x ${product.name} (${product.variant}).`, 'success'); } else { if (product.quantity < quantity) { showScanStatus('Insufficient stock.', 'error'); return; } product.quantity -= quantity; allSales.push({ product: { name: product.name, variant: product.variant, price: product.price }, quantity, timestamp: new Date().toISOString() }); saveSales(); showScanStatus(`Sold ${quantity} x ${product.name} (${product.variant}).`, 'success'); } saveProducts(); allUI.barcode_input.value = ''; allUI.quantity_input.value = '1'; allUI.barcode_input.focus(); }
+        function showScanStatus(message, type = 'info') { const el = allUI.scan_status; el.textContent = message; el.className = 'mt-3 text-center text-sm min-h-[20px]'; if (type === 'success') { el.classList.add('text-green-600'); } else if (type === 'error') { el.classList.add('text-red-600'); } setTimeout(() => el.textContent = '', 4000); }
+        
+        // --- CAMERA SCANNER FUNCTIONS (IMPROVED ERROR HANDLING) ---
+        function startScanner() { 
+            allUI.scanner_modal.classList.remove('hidden'); 
+            allUI.scanner_status_message.textContent = "Requesting camera..."; 
+            const onScanSuccess = (decodedText) => { 
+                stopScanner(); 
+                allUI.barcode_input.value = decodedText; 
+                if(navigator.vibrate){navigator.vibrate(200);} 
+                handleScanSubmit(); 
+            };
+            const onScanFailure = (error) => { /* ignore */ };
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, onScanSuccess, onScanFailure)
+            .catch(err => { 
+                console.error(`Unable to start scanning, error=${err}`);
+                let message = "Could not start camera.";
+                if (err.name === "NotAllowedError") {
+                    message = "Camera permission denied. Please allow camera access in your browser settings for this site.";
+                } else if (err.name === "NotFoundError") {
+                    message = "No camera found on this device.";
+                } else if (err.name === "NotReadableError") {
+                    message = "Camera is already in use by another app.";
+                }
+                allUI.scanner_status_message.textContent = message;
+            }); 
+            allUI.scanner_status_message.textContent = "Point camera at barcode";
+        }
+        function stopScanner() { if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().finally(() => allUI.scanner_modal.classList.add('hidden')); } else { allUI.scanner_modal.classList.add('hidden'); } }
+        
+        // --- SESSION & STOCK FEATURES ---
+        function openInitialStockModal() { const sortedProducts = [...allProducts].sort((a,b) => a.name.localeCompare(b.name)); allUI.initial_stock_list.innerHTML = sortedProducts.map(p => `<div class="grid grid-cols-3 gap-3 items-center"><label for="stock-${p.id}" class="col-span-2 text-sm font-medium text-gray-700 truncate">${p.name} (${p.variant})</label><input type="number" id="stock-${p.id}" data-id="${p.id}" value="${p.quantity}" min="0" class="w-full p-2 border border-gray-300 rounded-md text-right"></div>`).join(''); openGenericModal(allUI.initial_stock_modal); }
+        function saveInitialStock() { const inputs = allUI.initial_stock_list.querySelectorAll('input[type="number"]'); inputs.forEach(input => { const product = allProducts.find(p => p.id === input.dataset.id); if (product) product.quantity = parseInt(input.value) || 0; }); saveProducts(); closeGenericModal(allUI.initial_stock_modal); showScanStatus('Initial stock levels saved!', 'success'); }
+        function resetInventory() { allProducts.forEach(p => p.quantity = 0); saveProducts(); closeGenericModal(allUI.reset_modal); showScanStatus('Inventory has been reset to zero.', 'success'); }
+        
+        // --- DATA EXPORT / IMPORT ---
+        function exportData() { const timestamp = new Date(); const dateStr = timestamp.toISOString().split('T')[0]; const timeStr = timestamp.toTimeString().split(' ')[0].replace(/:/g, '-'); const filename = `inventory_session_${dateStr}_${timeStr}.json`; const dataToSave = JSON.stringify({ timestamp, products: allProducts, sales: allSales }, null, 2); const blob = new Blob([dataToSave], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url); showScanStatus('Session data exported!', 'success'); }
+        function handleImport(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (data.products && data.sales) { allProducts = data.products; allSales = data.sales; saveProducts(); saveSales(); showScanStatus('Session data imported successfully!', 'success'); } else { showScanStatus('Invalid session file.', 'error'); } } catch (err) { showScanStatus('Could not read file.', 'error'); } }; reader.readAsText(file); allUI.import_file_input.value = ''; }
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProducts();
+            loadSales();
+            renderInventoryTable(allProducts);
+            renderSalesTable(allSales);
+            html5QrCode = new Html5Qrcode("reader");
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(button => { button.addEventListener('click', () => { const targetTab = button.dataset.tab; document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('text-amber-600', 'border-amber-500'); btn.classList.add('text-gray-500'); }); button.classList.add('text-amber-600', 'border-amber-500'); document.querySelectorAll('.tab-content').forEach(c => c.id === `${targetTab}-content` ? c.classList.remove('hidden') : c.classList.add('hidden')); }); });
+            
+            // Event Listeners
+            allUI.add_new_product_btn.addEventListener('click', () => openModal('add'));
+            allUI.cancel_modal_btn.addEventListener('click', closeModal);
+            allUI.product_form.addEventListener('submit', handleFormSubmit);
+            allUI.cancel_delete_btn.addEventListener('click', closeDeleteModal);
+            allUI.confirm_delete_btn.addEventListener('click', handleDelete);
+            allUI.set_initial_stock_btn.addEventListener('click', openInitialStockModal);
+            allUI.cancel_initial_stock_btn.addEventListener('click', () => closeGenericModal(allUI.initial_stock_modal));
+            allUI.save_initial_stock_btn.addEventListener('click', saveInitialStock);
+            allUI.reset_inventory_btn.addEventListener('click', () => openGenericModal(allUI.reset_modal));
+            allUI.cancel_reset_btn.addEventListener('click', () => closeGenericModal(allUI.reset_modal));
+            allUI.confirm_reset_btn.addEventListener('click', resetInventory);
+            allUI.inventory_table_container.addEventListener('click', (e) => { if (e.target.closest('.edit-btn')) { const productToEdit = allProducts.find(p => p.id === e.target.closest('.edit-btn').dataset.id); if(productToEdit) openModal('edit', productToEdit); } if (e.target.closest('.delete-btn')) { openDeleteModal(e.target.closest('.delete-btn').dataset.id); } });
+            allUI.inventory_search.addEventListener('input', () => renderInventoryTable(allProducts));
+            allUI.scan_mode_add.addEventListener('click', () => { scanMode = 'add'; allUI.scan_mode_add.classList.add('bg-white', 'text-amber-600', 'shadow'); allUI.scan_mode_sell.classList.remove('bg-white', 'text-blue-600', 'shadow'); allUI.submit_scan.textContent = 'Add to Stock'; allUI.submit_scan.classList.replace('bg-blue-500', 'bg-amber-500'); });
+            allUI.scan_mode_sell.addEventListener('click', () => { scanMode = 'sell'; allUI.scan_mode_sell.classList.add('bg-white', 'text-blue-600', 'shadow'); allUI.scan_mode_add.classList.remove('bg-white', 'text-amber-600', 'shadow'); allUI.submit_scan.textContent = 'Record Sale'; allUI.submit_scan.classList.replace('bg-amber-500', 'bg-blue-500'); });
+            allUI.submit_scan.addEventListener('click', handleScanSubmit);
+            allUI.barcode_input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleScanSubmit(); });
+            allUI.scan_camera_btn.addEventListener('click', startScanner);
+            allUI.stop_scanner_btn.addEventListener('click', stopScanner);
+            allUI.export_data_btn.addEventListener('click', exportData);
+            allUI.import_data_btn.addEventListener('click', () => allUI.import_file_input.click());
+            allUI.import_file_input.addEventListener('change', handleImport);
+        });
+    </script>
+</body>
+</html>
+
