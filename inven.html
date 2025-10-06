@@ -813,7 +813,12 @@
          * @param {object} remoteData - The data object fetched from Supabase.
          */
         function mergeAndRecalculate(remoteData) {
-            console.log('🔄 Merging data. Cloud is the source of truth for the base state.');
+            console.log('🔄 Merging data...');
+            
+            // --- Log initial state for debugging ---
+            console.log('Initial Local Products:', JSON.parse(JSON.stringify(products)));
+            console.log('Initial Local Sales:', JSON.parse(JSON.stringify(sales)));
+            console.log('Fetched Remote Data:', remoteData);
 
             const localProducts = JSON.parse(JSON.stringify(products)); // Deep copy for safety
             const localSales = JSON.parse(JSON.stringify(sales));
@@ -858,11 +863,15 @@
                 };
             });
             
+            // --- Log final state for debugging ---
+            console.log('Final Calculated Products:', finalProducts);
+            console.log('Final Calculated Sales:', finalSales);
+
             // --- Step 3: Update the global state variables with the merged and calculated data ---
             products = finalProducts;
             sales = finalSales;
             
-            console.log('✅ Merge complete. New state calculated.');
+            console.log('✅ Global state updated.');
         }
         
         // --- App Startup ---
@@ -889,3 +898,4 @@
     </script>
 </body>
 </html>
+
