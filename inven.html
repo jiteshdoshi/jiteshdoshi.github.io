@@ -45,7 +45,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-1 main-grid overflow-hidden">
+        <main class="flex-1 main-grid">
             <!-- Left Panel: Scanner & Actions -->
             <div class="bg-white p-4 lg:p-6 flex flex-col overflow-y-auto border-r border-gray-200">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">Scanner & Actions</h2>
@@ -99,7 +99,7 @@
             <!-- Right Panel: Tabs for Inventory & Sales -->
             <div class="flex-1 flex flex-col bg-gray-50 overflow-y-auto">
                 <!-- Tab Headers -->
-                <div class="flex border-b border-gray-200 bg-white sticky top-0">
+                <div class="flex border-b border-gray-200 bg-white sticky top-0 z-10">
                     <button data-tab="inventory" class="tab-btn flex-1 py-3 px-4 text-center font-medium text-amber-600 border-b-2 border-amber-500"> Inventory </button>
                     <button data-tab="sales" class="tab-btn flex-1 py-3 px-4 text-center font-medium text-gray-500"> Sales Log </button>
                 </div>
@@ -198,7 +198,35 @@
         function handleDelete() { if (!itemToDeleteId) return; allProducts = allProducts.filter(p => p.id !== itemToDeleteId); saveProducts(); closeDeleteModal(); }
         
         // --- SCANNER LOGIC ---
-        function handleScanSubmit() { const barcode = allUI.barcode_input.value.trim(); const quantity = parseInt(allUI.quantity_input.value); if (!barcode || isNaN(quantity) || quantity <= 0) { showScanStatus('Please enter a valid barcode and quantity.', 'error'); return; } const product = allProducts.find(p => p.code === barcode); if (!product) { showScanStatus('Product with this barcode not found.', 'error'); return; } if (scanMode === 'add') { product.quantity += quantity; showScanStatus(`Added ${quantity} x ${product.name} (${product.variant}).`, 'success'); } else { if (product.quantity < quantity) { showScanStatus('Insufficient stock.', 'error'); return; } product.quantity -= quantity; allSales.push({ product: { name: product.name, variant: product.variant, price: product.price }, quantity, timestamp: new Date().toISOString() }); saveSales(); showScanStatus(`Sold ${quantity} x ${product.name} (${product.variant}).`, 'success'); } saveProducts(); allUI.barcode_input.value = ''; allUI.quantity_input.value = '1'; allUI.barcode_input.focus(); }
+        function handleScanSubmit() { 
+            const barcode = allUI.barcode_input.value.trim(); 
+            const quantity = parseInt(allUI.quantity_input.value); 
+            if (!barcode || isNaN(quantity) || quantity <= 0) { 
+                showScanStatus('Please enter a valid barcode and quantity.', 'error'); 
+                return; 
+            } 
+            const product = allProducts.find(p => p.code === barcode); 
+            if (!product) { 
+                showScanStatus('Product with this barcode not found.', 'error'); 
+                return; 
+            } 
+            if (scanMode === 'add') { 
+                product.quantity += quantity; 
+                showScanStatus(`Added ${quantity} x ${product.name} (${product.variant}).`, 'success'); 
+            } else { 
+                if (product.quantity < quantity) { 
+                    showScanStatus('Insufficient stock.', 'error'); 
+                    return; 
+                } 
+                product.quantity -= quantity; 
+                allSales.push({ product: { name: product.name, variant: product.variant, price: product.price }, quantity, timestamp: new Date().toISOString() }); 
+                saveSales(); 
+                showScanStatus(`Sold ${quantity} x ${product.name} (${product.variant}).`, 'success'); 
+            } 
+            saveProducts(); 
+            allUI.quantity_input.value = '1'; 
+            allUI.barcode_input.focus(); 
+        }
         function showScanStatus(message, type = 'info') { const el = allUI.scan_status; el.textContent = message; el.className = 'mt-3 text-center text-sm min-h-[20px]'; if (type === 'success') { el.classList.add('text-green-600'); } else if (type === 'error') { el.classList.add('text-red-600'); } setTimeout(() => el.textContent = '', 4000); }
         
         // --- CAMERA SCANNER FUNCTIONS (IMPROVED ERROR HANDLING) ---
@@ -276,4 +304,5 @@
     </script>
 </body>
 </html>
+" has been selected in the Canvas. I am now providing a query based on this selection.
 
