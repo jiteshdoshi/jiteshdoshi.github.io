@@ -13,14 +13,6 @@
             font-family: 'Inter', sans-serif;
             overscroll-behavior: none;
         }
-        .main-grid {
-            grid-template-columns: 1fr;
-        }
-        @media (min-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 375px 1fr; /* Increased panel width */
-            }
-        }
         /* Custom scrollbar for better aesthetics */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -30,13 +22,17 @@
         .modal-content { transition: transform 0.3s ease-in-out; }
         #reader { width: 100%; border: 2px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
         #scanner-modal video { width: 100%; height: auto; }
+        .nav-btn.active {
+            background-color: #f59e0b; /* amber-500 */
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
     <div id="app" class="h-screen w-screen flex flex-col">
         <!-- Header -->
-        <header class="bg-amber-500 text-white shadow-md p-4 flex items-center justify-between z-20">
+        <header class="bg-amber-500 text-white shadow-md p-4 flex items-center justify-between z-20 flex-shrink-0">
             <div class="flex items-center space-x-4">
                 <img src="https://static.wixstatic.com/media/311af0_85acadb4f0c246959f774351d0564f08~mv2.png/v1/fill/w_70,h_80,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Logo-png-Dark-Name_edited.png" alt="The Honey Shelter Logo" class="h-12 w-auto">
                 <h1 class="text-2xl font-bold">The Honey Shelter</h1>
@@ -44,71 +40,68 @@
             <div id="app-status" class="text-sm bg-green-500 px-2 py-1 rounded">Offline Ready</div>
         </header>
 
-        <!-- Main Content -->
-        <main class="flex-1 main-grid overflow-hidden">
-            <!-- Left Panel: Scanner & Actions -->
-            <div class="bg-white p-4 lg:p-6 flex flex-col border-r border-gray-200">
-                <div class="flex-shrink-0">
+        <!-- Navigation Menu -->
+        <nav class="bg-white shadow-md flex justify-around p-1 flex-shrink-0">
+            <button data-page="scanner-page" class="nav-btn flex-1 py-3 px-4 text-center font-medium rounded-md active">Scanner</button>
+            <button data-page="inventory-page" class="nav-btn flex-1 py-3 px-4 text-center font-medium rounded-md">Inventory</button>
+            <button data-page="reports-page" class="nav-btn flex-1 py-3 px-4 text-center font-medium rounded-md">Reports</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto">
+            
+            <!-- Scanner Page -->
+            <div id="scanner-page" class="page-content p-4 lg:p-6">
+                 <div class="max-w-md mx-auto">
                     <h2 class="text-xl font-semibold mb-4 text-gray-700">Scanner & Actions</h2>
-
-                    <!-- Action Toggle -->
                     <div class="mb-4"><div class="flex items-center justify-center rounded-lg bg-gray-200 p-1"><button id="scan-mode-add" class="w-full text-center py-2 px-4 rounded-md text-sm font-medium bg-white text-amber-600 shadow">Add Stock</button><button id="scan-mode-sell" class="w-full text-center py-2 px-4 rounded-md text-sm font-medium text-gray-500">Record Sale</button></div></div>
-                    
-                    <!-- Barcode Input -->
                     <div class="mb-4"><label for="barcode-input" class="block text-sm font-medium text-gray-600 mb-1">Barcode</label><div class="relative"><input type="text" id="barcode-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition pr-10" placeholder="Enter or scan barcode..."><button id="scan-camera-btn" title="Scan with Camera" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-amber-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button></div></div>
-
-                    <!-- Quantity Input -->
                     <div class="mb-4"><label for="quantity-input" class="block text-sm font-medium text-gray-600 mb-1">Quantity</label><input type="number" id="quantity-input" value="1" min="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition"></div>
-                    
                     <button id="submit-scan" class="w-full bg-amber-500 text-white py-3 rounded-lg font-semibold hover:bg-amber-600 transition shadow-sm">Add to Transaction</button>
                     <div id="scan-status" class="mt-3 text-center text-sm min-h-[20px]"></div>
-                </div>
 
-                <!-- Transaction Staging Area -->
-                <div class="flex-1 flex flex-col min-h-0">
                     <hr class="my-4 border-t border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2 flex-shrink-0">Current Transaction</h3>
-                    <div id="transaction-list" class="flex-1 overflow-y-auto bg-gray-50 p-2 rounded-lg border min-h-[100px]">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Current Transaction</h3>
+                    <div id="transaction-list" class="overflow-y-auto bg-gray-50 p-2 rounded-lg border min-h-[100px]">
                         <p class="text-center text-gray-500 text-sm p-4">Scan items to add them here.</p>
                     </div>
-                    <div id="transaction-actions" class="mt-2 space-y-2 flex-shrink-0">
+                    <div id="transaction-actions" class="mt-2 space-y-2">
                          <button id="confirm-transaction-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">Confirm Transaction</button>
                          <button id="clear-transaction-btn" class="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition text-sm disabled:bg-gray-400 disabled:cursor-not-allowed">Clear Transaction</button>
                     </div>
+                 </div>
+            </div>
+
+            <!-- Inventory Page -->
+            <div id="inventory-page" class="page-content p-4 lg:p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700">Manage Inventory</h2>
+                    <input type="text" id="inventory-search" placeholder="Search products..." class="w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-lg text-sm">
                 </div>
-                 <hr class="my-4 border-t border-gray-200">
-                <!-- Management Buttons -->
-                <div class="space-y-3 flex-shrink-0">
+                <div id="inventory-table-container" class="bg-white rounded-lg shadow overflow-hidden mb-6"></div>
+                <div class="space-y-3 max-w-sm mx-auto">
                     <button id="add-new-product-btn" class="w-full bg-gray-700 text-white py-2 rounded-lg font-semibold hover:bg-gray-800 transition text-sm"> + Add New Product </button>
                     <button id="set-initial-stock-btn" class="w-full bg-sky-600 text-white py-2 rounded-lg font-semibold hover:bg-sky-700 transition text-sm"> Set Initial Stock </button>
                     <button id="reset-inventory-btn" class="w-full bg-gray-500 text-white py-2 rounded-lg font-semibold hover:bg-gray-600 transition text-sm"> Reset All Inventory </button>
                 </div>
-                <hr class="my-4 border-t border-gray-200">
-                <div class="space-y-3 flex-shrink-0">
-                    <button id="export-data-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">Export Session Data</button>
-                    <button id="import-data-btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm">Import Session Data</button>
-                    <input type="file" id="import-file-input" class="hidden" accept=".json">
-                </div>
             </div>
 
-            <!-- Right Panel: Tabs for Inventory & Sales -->
-            <div class="flex-1 flex flex-col bg-gray-50 overflow-y-auto">
-                <!-- Tab Headers -->
-                <div class="flex border-b border-gray-200 bg-white sticky top-0 z-10">
-                    <button data-tab="inventory" class="tab-btn flex-1 py-3 px-4 text-center font-medium text-amber-600 border-b-2 border-amber-500"> Inventory </button>
-                    <button data-tab="sales" class="tab-btn flex-1 py-3 px-4 text-center font-medium text-gray-500"> Sales Log </button>
+            <!-- Reports Page -->
+            <div id="reports-page" class="page-content p-4 lg:p-6 hidden">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Session Report</h2>
+                <div id="report-summary" class="grid grid-cols-2 gap-4 mb-6"></div>
+                <div class="space-y-3 mb-6">
+                    <button id="export-data-btn" class="w-full max-w-xs mx-auto bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">Export Session Data</button>
+                    <button id="import-data-btn" class="w-full max-w-xs mx-auto bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm">Import Session Data</button>
+                    <input type="file" id="import-file-input" class="hidden" accept=".json">
                 </div>
-                
-                <!-- Tab Content -->
-                <div class="p-4 lg:p-6">
-                    <div id="inventory-content" class="tab-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-gray-700">Product List</h3><input type="text" id="inventory-search" placeholder="Search products..." class="w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-lg text-sm"></div><div id="inventory-table-container" class="bg-white rounded-lg shadow overflow-hidden"></div></div>
-                    <div id="sales-content" class="tab-content hidden"><h3 class="text-xl font-semibold text-gray-700 mb-4">Recent Sales</h3><div id="sales-table-container" class="bg-white rounded-lg shadow overflow-hidden"></div></div>
-                </div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Sales Log</h3>
+                <div id="sales-table-container" class="bg-white rounded-lg shadow overflow-hidden"></div>
             </div>
         </main>
     </div>
     
-    <!-- All Modals -->
+    <!-- All Modals (structurally unchanged) -->
     <div id="scanner-modal" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80 p-4 hidden"><div class="bg-white rounded-lg p-4 w-full max-w-md"><h2 class="text-lg font-bold text-center mb-2">Scan Barcode</h2><div id="reader"></div><div id="scanner-status-message" class="text-center text-sm text-gray-600 mt-2 min-h-[20px]"></div></div><button id="stop-scanner-btn" class="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg font-semibold">Cancel</button></div>
     <div id="product-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-md p-6 lg:p-8 transform scale-95"><h2 id="modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add New Product</h2><form id="product-form"><input type="hidden" id="product-id"><div class="mb-4"><label for="product-name" class="block text-sm font-medium text-gray-600 mb-1">Product Name</label><input type="text" id="product-name" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="mb-4"><label for="product-variant" class="block text-sm font-medium text-gray-600 mb-1">Variant (e.g., 200g)</label><input type="text" id="product-variant" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="mb-4"><label for="product-barcode" class="block text-sm font-medium text-gray-600 mb-1">Barcode</label><input type="text" id="product-barcode" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="mb-6"><label for="product-quantity" class="block text-sm font-medium text-gray-600 mb-1">Stock Quantity</label><input type="number" id="product-quantity" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="flex justify-end space-x-3"><button type="button" id="cancel-modal-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="submit" class="px-6 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition">Save Product</button></div></form></div></div>
     <div id="delete-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-sm p-6 transform scale-95"><h2 class="text-xl font-bold text-gray-800">Confirm Deletion</h2><p id="delete-message" class="text-gray-600 my-4">Are you sure? This cannot be undone.</p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-delete-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="confirm-delete-btn" class="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition">Delete</button></div></div></div>
@@ -117,130 +110,47 @@
 
     <script type="module">
         // --- INITIAL PRODUCT DATA (NO PRICES) ---
-        const initialProducts = [
-            { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 },
-            { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 },
-            { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 },
-            { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 },
-            { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 },
-            { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 },
-            { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 },
-            { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 },
-            { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 },
-            { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 },
-            { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 },
-            { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 },
-            { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 },
-            { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 },
-            { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 },
-            { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 },
-            { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 },
-            { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 },
-            { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 },
-            { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 },
-            { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 },
-            { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 },
-            { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 },
-            { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 },
-            { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 },
-            { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 },
-        ];
+        const initialProducts = [ { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 }, { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 }, { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 }, { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 }, { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 }, { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 }, { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 }, { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 }, { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 }, { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 }, { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 }, { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 }, { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 }, { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 }, { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 }, { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 }, { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 }, { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 }, { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 }, { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 }, { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 }, { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 }, { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 }, { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 }, { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 }, { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 } ];
         
         // --- UI & STATE MANAGEMENT ---
         const allUI = {};
-        ['inventory-table-container', 'sales-table-container', 'inventory-search', 'product-modal', 'product-form', 'modal-title', 'cancel-modal-btn', 'delete-modal', 'cancel-delete-btn', 'confirm-delete-btn', 'initial-stock-modal', 'initial-stock-list', 'cancel-initial-stock-btn', 'save-initial-stock-btn', 'reset-modal', 'cancel-reset-btn', 'confirm-reset-btn', 'add-new-product-btn', 'set-initial-stock-btn', 'reset-inventory-btn', 'scan-mode-add', 'scan-mode-sell', 'barcode-input', 'quantity-input', 'submit-scan', 'scan-status', 'scan-camera-btn', 'scanner-modal', 'stop-scanner-btn', 'scanner-status-message', 'export-data-btn', 'import-data-btn', 'import-file-input', 'transaction-list', 'confirm-transaction-btn', 'clear-transaction-btn'].forEach(id => {
-            allUI[id.replace(/-/g, '_')] = document.getElementById(id);
-        });
+        ['inventory-table-container', 'sales-table-container', 'inventory-search', 'product-modal', 'product-form', 'modal-title', 'cancel-modal-btn', 'delete-modal', 'cancel-delete-btn', 'confirm-delete-btn', 'initial-stock-modal', 'initial-stock-list', 'cancel-initial-stock-btn', 'save-initial-stock-btn', 'reset-modal', 'cancel-reset-btn', 'confirm-reset-btn', 'add-new-product-btn', 'set-initial-stock-btn', 'reset-inventory-btn', 'scan-mode-add', 'scan-mode-sell', 'barcode-input', 'quantity-input', 'submit-scan', 'scan-status', 'scan-camera-btn', 'scanner-modal', 'stop-scanner-btn', 'scanner-status-message', 'export-data-btn', 'import-data-btn', 'import-file-input', 'transaction-list', 'confirm-transaction-btn', 'clear-transaction-btn', 'report-summary'].forEach(id => { allUI[id.replace(/-/g, '_')] = document.getElementById(id); });
 
-        let html5QrCode;
-        let allProducts = [];
-        let allSales = [];
-        let currentTransaction = [];
-        let scanMode = 'add';
-        let itemToDeleteId = null;
+        let html5QrCode, allProducts = [], allSales = [], currentTransaction = [], scanMode = 'add', itemToDeleteId = null;
 
-        // --- LOCAL DATA STORAGE ---
-        function loadProducts() { const stored = localStorage.getItem('inventoryApp_products'); allProducts = stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(initialProducts)); saveProducts(); }
+        // --- LOCAL DATA & STATE ---
+        function loadProducts() { const s = localStorage.getItem('inventoryApp_products'); allProducts = s ? JSON.parse(s) : JSON.parse(JSON.stringify(initialProducts)); saveProducts(); }
         function saveProducts() { localStorage.setItem('inventoryApp_products', JSON.stringify(allProducts)); renderInventoryTable(allProducts); }
-        function loadSales() { const stored = localStorage.getItem('inventoryApp_sales'); allSales = stored ? JSON.parse(stored) : []; saveSales(); }
-        function saveSales() { localStorage.setItem('inventoryApp_sales', JSON.stringify(allSales)); renderSalesTable(allSales); }
+        function loadSales() { const s = localStorage.getItem('inventoryApp_sales'); allSales = s ? JSON.parse(s) : []; saveSales(); }
+        function saveSales() { localStorage.setItem('inventoryApp_sales', JSON.stringify(allSales)); renderSalesTable(allSales); renderReport(); }
         
         // --- RENDER FUNCTIONS ---
-        function renderInventoryTable(products) { const term = allUI.inventory_search.value.toLowerCase(); const filtered = products.filter(p => p.name.toLowerCase().includes(term) || p.variant.toLowerCase().includes(term) || p.code.includes(term)).sort((a,b) => a.name.localeCompare(b.name)); allUI.inventory_table_container.innerHTML = filtered.length === 0 ? `<div class="p-8 text-center text-gray-500">No products found.</div>` : `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Product</th><th class="px-6 py-3">Barcode</th><th class="px-6 py-3 text-right">Stock</th><th class="px-6 py-3 text-center">Actions</th></tr></thead><tbody>${filtered.map(p => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${p.name} <span class="text-gray-500 text-xs">(${p.variant})</span></td><td class="px-6 py-4 font-mono">${p.code}</td><td class="px-6 py-4 text-right font-semibold ${p.quantity <= 5 ? 'text-red-500' : 'text-gray-800'}">${p.quantity}</td><td class="px-6 py-4 text-center"><button class="edit-btn font-medium text-amber-600 hover:underline" data-id="${p.id}">Edit</button><button class="delete-btn font-medium text-red-600 hover:underline ml-4" data-id="${p.id}">Delete</button></td></tr>`).join('')}</tbody></table>`; }
-        function renderSalesTable(sales) { const sorted = sales.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); allUI.sales_table_container.innerHTML = sorted.length === 0 ? `<div class="p-8 text-center text-gray-500">No sales recorded.</div>` : `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Date</th><th class="px-6 py-3">Product</th><th class="px-6 py-3 text-right">Units</th></tr></thead><tbody>${sorted.slice(0, 100).map(s => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-600">${new Date(s.timestamp).toLocaleString()}</td><td class="px-6 py-4 font-medium text-gray-900">${s.product.name} <span class="text-gray-500 text-xs">(${s.product.variant})</span></td><td class="px-6 py-4 text-right">${s.quantity}</td></tr>`).join('')}</tbody></table>`; }
-        function renderTransactionList() {
-            allUI.confirm_transaction_btn.disabled = currentTransaction.length === 0;
-            allUI.clear_transaction_btn.disabled = currentTransaction.length === 0;
-            if (currentTransaction.length === 0) { allUI.transaction_list.innerHTML = `<p class="text-center text-gray-500 text-sm p-4">Scan items to add them here.</p>`; return; }
-            allUI.transaction_list.innerHTML = currentTransaction.map((item, index) => `<div class="flex items-center justify-between p-2 bg-white border-b"><div class="flex-1 truncate"><span class="font-medium">${item.name}</span><span class="text-xs text-gray-500"> (${item.variant})</span></div><div class="text-center px-2"><span class="${item.type === 'add' ? 'text-green-600' : 'text-blue-600'} font-semibold">${item.type === 'add' ? '+' : '-'}${item.quantity}</span></div><button class="remove-from-transaction-btn text-red-500 hover:text-red-700 p-1" data-index="${index}">&times;</button></div>`).join('');
-            document.querySelectorAll('.remove-from-transaction-btn').forEach(btn => btn.addEventListener('click', (e) => handleRemoveFromTransaction(e.currentTarget.dataset.index)));
-        }
+        function renderInventoryTable(p) { const term = allUI.inventory_search.value.toLowerCase(); const f = p.filter(i => i.name.toLowerCase().includes(term) || i.variant.toLowerCase().includes(term) || i.code.includes(term)).sort((a,b) => a.name.localeCompare(b.name)); allUI.inventory_table_container.innerHTML = f.length === 0 ? `<div class="p-8 text-center text-gray-500">No products found.</div>` : `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Product</th><th class="px-6 py-3">Barcode</th><th class="px-6 py-3 text-right">Stock</th><th class="px-6 py-3 text-center">Actions</th></tr></thead><tbody>${f.map(i => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${i.name} <span class="text-gray-500 text-xs">(${i.variant})</span></td><td class="px-6 py-4 font-mono">${i.code}</td><td class="px-6 py-4 text-right font-semibold ${i.quantity <= 5 ? 'text-red-500' : 'text-gray-800'}">${i.quantity}</td><td class="px-6 py-4 text-center"><button class="edit-btn font-medium text-amber-600 hover:underline" data-id="${i.id}">Edit</button><button class="delete-btn font-medium text-red-600 hover:underline ml-4" data-id="${i.id}">Delete</button></td></tr>`).join('')}</tbody></table>`; }
+        function renderSalesTable(s) { const sorted = s.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); allUI.sales_table_container.innerHTML = sorted.length === 0 ? `<div class="p-8 text-center text-gray-500">No sales recorded.</div>` : `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Date</th><th class="px-6 py-3">Product</th><th class="px-6 py-3 text-right">Units</th></tr></thead><tbody>${sorted.slice(0, 200).map(i => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-600">${new Date(i.timestamp).toLocaleString()}</td><td class="px-6 py-4 font-medium text-gray-900">${i.product.name} <span class="text-gray-500 text-xs">(${i.product.variant})</span></td><td class="px-6 py-4 text-right">${i.quantity}</td></tr>`).join('')}</tbody></table>`; }
+        function renderTransactionList() { allUI.confirm_transaction_btn.disabled = allUI.clear_transaction_btn.disabled = currentTransaction.length === 0; if (currentTransaction.length === 0) { allUI.transaction_list.innerHTML = `<p class="text-center text-gray-500 text-sm p-4">Scan items here.</p>`; return; } allUI.transaction_list.innerHTML = currentTransaction.map((i, idx) => `<div class="flex items-center justify-between p-2 bg-white border-b"><div class="flex-1 truncate"><span class="font-medium">${i.name}</span><span class="text-xs text-gray-500"> (${i.variant})</span></div><div class="text-center px-2"><span class="${i.type === 'add' ? 'text-green-600' : 'text-blue-600'} font-semibold">${i.type === 'add' ? '+' : '-'}${i.quantity}</span></div><button class="remove-from-transaction-btn text-red-500 hover:text-red-700 p-1" data-index="${idx}">&times;</button></div>`).join(''); document.querySelectorAll('.remove-from-transaction-btn').forEach(b => b.addEventListener('click', (e) => handleRemoveFromTransaction(e.currentTarget.dataset.index))); }
+        function renderReport() { const totalUnits = allSales.reduce((sum, item) => sum + item.quantity, 0); const uniqueItems = new Set(allSales.map(item => item.product.name + item.product.variant)).size; allUI.report_summary.innerHTML = `<div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Total Units Sold</p><p class="text-2xl font-bold">${totalUnits}</p></div><div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Unique Products Sold</p><p class="text-2xl font-bold">${uniqueItems}</p></div>`; }
         
         // --- MODAL & FORM HANDLING ---
-        function openGenericModal(modalEl) { modalEl.classList.remove('opacity-0', 'pointer-events-none'); modalEl.querySelector('.modal-content').classList.remove('scale-95'); }
-        function closeGenericModal(modalEl) { modalEl.classList.add('opacity-0'); modalEl.querySelector('.modal-content').classList.add('scale-95'); setTimeout(() => modalEl.classList.add('pointer-events-none'), 300); }
-        function openModal(mode, product = null) { allUI.product_form.reset(); if (mode === 'add') { allUI.modal_title.textContent = 'Add New Product'; allUI.product_form['product-id'].value = ''; } else { allUI.modal_title.textContent = 'Edit Product'; allUI.product_form['product-id'].value = product.id; allUI.product_form['product-name'].value = product.name; allUI.product_form['product-variant'].value = product.variant; allUI.product_form['product-barcode'].value = product.code; allUI.product_form['product-quantity'].value = product.quantity; } openGenericModal(allUI.product_modal); }
-        function handleFormSubmit(e) { e.preventDefault(); const form = allUI.product_form; const id = form['product-id'].value; const productData = { name: form['product-name'].value, variant: form['product-variant'].value, code: form['product-barcode'].value, quantity: parseInt(form['product-quantity'].value) || 0 }; if (id) { const index = allProducts.findIndex(p => p.id === id); if (index !== -1) allProducts[index] = { ...allProducts[index], ...productData }; } else { productData.id = 'prod-' + Date.now(); allProducts.push(productData); } saveProducts(); closeGenericModal(allUI.product_modal); }
+        function openGenericModal(m) { m.classList.remove('opacity-0', 'pointer-events-none'); m.querySelector('.modal-content').classList.remove('scale-95'); }
+        function closeGenericModal(m) { m.classList.add('opacity-0'); m.querySelector('.modal-content').classList.add('scale-95'); setTimeout(() => m.classList.add('pointer-events-none'), 300); }
+        function openModal(mode, p = null) { allUI.product_form.reset(); if (mode === 'add') { allUI.modal_title.textContent = 'Add New Product'; allUI.product_form['product-id'].value = ''; } else { allUI.modal_title.textContent = 'Edit Product'; allUI.product_form['product-id'].value = p.id; allUI.product_form['product-name'].value = p.name; allUI.product_form['product-variant'].value = p.variant; allUI.product_form['product-barcode'].value = p.code; allUI.product_form['product-quantity'].value = p.quantity; } openGenericModal(allUI.product_modal); }
+        function handleFormSubmit(e) { e.preventDefault(); const f = allUI.product_form, id = f['product-id'].value; const data = { name: f['product-name'].value, variant: f['product-variant'].value, code: f['product-barcode'].value, quantity: parseInt(f['product-quantity'].value) || 0 }; if (id) { const idx = allProducts.findIndex(p => p.id === id); if (idx > -1) allProducts[idx] = { ...allProducts[idx], ...data }; } else { data.id = 'prod-' + Date.now(); allProducts.push(data); } saveProducts(); closeGenericModal(allUI.product_modal); }
         function handleDelete() { if (!itemToDeleteId) return; allProducts = allProducts.filter(p => p.id !== itemToDeleteId); saveProducts(); closeGenericModal(allUI.delete_modal); itemToDeleteId = null; }
         
         // --- TRANSACTION & SCANNER LOGIC ---
-        function handleScanSubmit() { 
-            const barcode = allUI.barcode_input.value.trim(); 
-            const quantity = parseInt(allUI.quantity_input.value); 
-            if (!barcode || isNaN(quantity) || quantity <= 0) { showScanStatus('Invalid barcode or quantity.', 'error'); return; } 
-            const product = allProducts.find(p => p.code === barcode); 
-            if (!product) { showScanStatus('Product not found.', 'error'); return; } 
-            
-            // Check if item already in transaction to merge quantities
-            const existingIndex = currentTransaction.findIndex(item => item.id === product.id && item.type === scanMode);
-            if(existingIndex > -1){
-                currentTransaction[existingIndex].quantity += quantity;
-            } else {
-                currentTransaction.push({ ...product, quantity, type: scanMode });
-            }
-
-            renderTransactionList();
-            showScanStatus(`Staged: ${product.name}`, 'success');
-            allUI.barcode_input.value = ''; 
-            allUI.quantity_input.value = '1'; 
-            allUI.barcode_input.focus(); 
-        }
-
-        function processTransaction() {
-            if (currentTransaction.length === 0) return;
-            currentTransaction.forEach(item => {
-                const product = allProducts.find(p => p.id === item.id);
-                if (!product) return;
-                if (item.type === 'add') {
-                    product.quantity += item.quantity;
-                } else {
-                    if (product.quantity >= item.quantity) {
-                        product.quantity -= item.quantity;
-                        allSales.push({ product: { name: product.name, variant: product.variant }, quantity: item.quantity, timestamp: new Date().toISOString() });
-                    } else {
-                        // This case should be handled better in a real app, maybe highlight the error
-                        console.warn(`Could not sell ${item.quantity} of ${item.name}, only ${product.quantity} in stock.`);
-                    }
-                }
-            });
-            saveProducts();
-            saveSales();
-            currentTransaction = [];
-            renderTransactionList();
-            showScanStatus('Transaction confirmed!', 'success');
-        }
-
-        function handleRemoveFromTransaction(index) { currentTransaction.splice(index, 1); renderTransactionList(); }
-        function showScanStatus(message, type = 'info') { const el = allUI.scan_status; el.textContent = message; el.className = 'mt-3 text-center text-sm min-h-[20px]'; if (type === 'success') el.classList.add('text-green-600'); else if (type === 'error') el.classList.add('text-red-600'); setTimeout(() => el.textContent = '', 3000); }
-        function startScanner() { allUI.scanner_modal.classList.remove('hidden'); allUI.scanner_status_message.textContent = "Requesting camera..."; const onScanSuccess = (decodedText) => { stopScanner(); allUI.barcode_input.value = decodedText; if(navigator.vibrate) navigator.vibrate(100); handleScanSubmit(); }; html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, onScanSuccess, (e)=>{}) .catch(err => { let msg = "Could not start camera."; if (err.name === "NotAllowedError") msg = "Camera permission denied."; else if (err.name === "NotFoundError") msg = "No camera found."; else if (err.name === "NotReadableError") msg = "Camera is in use."; allUI.scanner_status_message.textContent = msg; }); }
+        function handleScanSubmit() { const code = allUI.barcode_input.value.trim(); const qty = parseInt(allUI.quantity_input.value); if (!code || isNaN(qty) || qty <= 0) { showScanStatus('Invalid barcode or quantity.', 'error'); return; } const p = allProducts.find(i => i.code === code); if (!p) { showScanStatus('Product not found.', 'error'); return; } const existIdx = currentTransaction.findIndex(i => i.id === p.id && i.type === scanMode); if (existIdx > -1) { currentTransaction[existIdx].quantity += qty; } else { currentTransaction.push({ ...p, quantity: qty, type: scanMode }); } renderTransactionList(); showScanStatus(`Staged: ${p.name}`, 'success'); allUI.barcode_input.value = ''; allUI.quantity_input.value = '1'; allUI.barcode_input.focus(); }
+        function processTransaction() { if (currentTransaction.length === 0) return; currentTransaction.forEach(item => { const p = allProducts.find(i => i.id === item.id); if (!p) return; if (item.type === 'add') { p.quantity += item.quantity; } else { if (p.quantity >= item.quantity) { p.quantity -= item.quantity; allSales.push({ product: { name: p.name, variant: p.variant }, quantity: item.quantity, timestamp: new Date().toISOString() }); } } }); saveProducts(); saveSales(); currentTransaction = []; renderTransactionList(); showScanStatus('Transaction confirmed!', 'success'); }
+        function handleRemoveFromTransaction(idx) { currentTransaction.splice(idx, 1); renderTransactionList(); }
+        function showScanStatus(msg, type = 'info') { const el = allUI.scan_status; el.textContent = msg; el.className = 'mt-3 text-center text-sm min-h-[20px]'; if (type === 'success') el.classList.add('text-green-600'); else if (type === 'error') el.classList.add('text-red-600'); setTimeout(() => el.textContent = '', 3000); }
+        function startScanner() { allUI.scanner_modal.classList.remove('hidden'); allUI.scanner_status_message.textContent = "Requesting camera..."; const onSuccess = (text) => { stopScanner(); allUI.barcode_input.value = text; if(navigator.vibrate) navigator.vibrate(100); handleScanSubmit(); }; html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, onSuccess, ()=>{}) .catch(err => { let msg = "Could not start camera."; if (err.name === "NotAllowedError") msg = "Camera permission denied."; allUI.scanner_status_message.textContent = msg; }); }
         function stopScanner() { if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().finally(() => allUI.scanner_modal.classList.add('hidden')); } else { allUI.scanner_modal.classList.add('hidden'); } }
         
         // --- OTHER FEATURES ---
-        function openInitialStockModal() { const sorted = [...allProducts].sort((a,b) => a.name.localeCompare(b.name)); allUI.initial_stock_list.innerHTML = sorted.map(p => `<div class="grid grid-cols-3 gap-3 items-center"><label for="stock-${p.id}" class="col-span-2 text-sm font-medium text-gray-700 truncate">${p.name} (${p.variant})</label><input type="number" id="stock-${p.id}" data-id="${p.id}" value="${p.quantity}" min="0" class="w-full p-2 border border-gray-300 rounded-md text-right"></div>`).join(''); openGenericModal(allUI.initial_stock_modal); }
-        function saveInitialStock() { const inputs = allUI.initial_stock_list.querySelectorAll('input[type="number"]'); inputs.forEach(input => { const product = allProducts.find(p => p.id === input.dataset.id); if (product) product.quantity = parseInt(input.value) || 0; }); saveProducts(); closeGenericModal(allUI.initial_stock_modal); showScanStatus('Initial stock levels saved!', 'success'); }
-        function resetInventory() { allProducts.forEach(p => p.quantity = 0); saveProducts(); closeGenericModal(allUI.reset_modal); showScanStatus('Inventory reset to zero.', 'success'); }
-        function exportData() { const timestamp = new Date(); const filename = `inventory_session_${timestamp.toISOString().split('T')[0]}.json`; const data = JSON.stringify({ timestamp, products: allProducts, sales: allSales }, null, 2); const blob = new Blob([data], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href); }
-        function handleImport(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (data.products && data.sales) { allProducts = data.products; allSales = data.sales; saveProducts(); saveSales(); showScanStatus('Session data imported!', 'success'); } else { showScanStatus('Invalid file.', 'error'); } } catch (err) { showScanStatus('Could not read file.', 'error'); } }; reader.readAsText(file); allUI.import_file_input.value = ''; }
+        function openInitialStockModal() { const sorted = [...allProducts].sort((a,b) => a.name.localeCompare(b.name)); allUI.initial_stock_list.innerHTML = sorted.map(p => `<div class="grid grid-cols-3 gap-3 items-center"><label class="col-span-2 text-sm font-medium text-gray-700 truncate">${p.name} (${p.variant})</label><input type="number" data-id="${p.id}" value="${p.quantity}" min="0" class="w-full p-2 border border-gray-300 rounded-md text-right"></div>`).join(''); openGenericModal(allUI.initial_stock_modal); }
+        function saveInitialStock() { allUI.initial_stock_list.querySelectorAll('input[type="number"]').forEach(i => { const p = allProducts.find(p => p.id === i.dataset.id); if (p) p.quantity = parseInt(i.value) || 0; }); saveProducts(); closeGenericModal(allUI.initial_stock_modal); }
+        function resetInventory() { allProducts.forEach(p => p.quantity = 0); saveProducts(); closeGenericModal(allUI.reset_modal); }
+        function exportData() { const filename = `inventory_session_${new Date().toISOString().split('T')[0]}.json`; const data = JSON.stringify({ products: allProducts, sales: allSales }, null, 2); const blob = new Blob([data], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href); }
+        function handleImport(e) { const f = e.target.files[0]; if (!f) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (data.products && data.sales) { allProducts = data.products; allSales = data.sales; saveProducts(); saveSales(); showScanStatus('Session imported!', 'success'); } else { showScanStatus('Invalid file.', 'error'); } } catch (err) { showScanStatus('Could not read file.', 'error'); } }; reader.readAsText(f); allUI.import_file_input.value = ''; }
 
         // --- INITIALIZATION & EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -249,22 +159,19 @@
             renderTransactionList();
             html5QrCode = new Html5Qrcode("reader");
             
-            document.querySelectorAll('.tab-btn').forEach(button => { button.addEventListener('click', (e) => { const tab = e.currentTarget.dataset.tab; document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('text-amber-600', 'border-amber-500')); e.currentTarget.classList.add('text-amber-600', 'border-amber-500'); document.querySelectorAll('.tab-content').forEach(c => c.id === `${tab}-content` ? c.classList.remove('hidden') : c.classList.add('hidden')); }); });
+            document.querySelectorAll('.nav-btn').forEach(b => { b.addEventListener('click', (e) => { const page = e.currentTarget.dataset.page; document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); e.currentTarget.classList.add('active'); document.querySelectorAll('.page-content').forEach(p => p.id === page ? p.classList.remove('hidden') : p.classList.add('hidden')); if (page === 'reports-page') renderReport(); }); });
             allUI.add_new_product_btn.addEventListener('click', () => openModal('add'));
-            allUI.cancel_modal_btn.addEventListener('click', () => closeGenericModal(allUI.product_modal));
             allUI.product_form.addEventListener('submit', handleFormSubmit);
-            allUI.cancel_delete_btn.addEventListener('click', () => closeGenericModal(allUI.delete_modal));
             allUI.confirm_delete_btn.addEventListener('click', handleDelete);
             allUI.set_initial_stock_btn.addEventListener('click', openInitialStockModal);
-            allUI.cancel_initial_stock_btn.addEventListener('click', () => closeGenericModal(allUI.initial_stock_modal));
             allUI.save_initial_stock_btn.addEventListener('click', saveInitialStock);
             allUI.reset_inventory_btn.addEventListener('click', () => openGenericModal(allUI.reset_modal));
-            allUI.cancel_reset_btn.addEventListener('click', () => closeGenericModal(allUI.reset_modal));
             allUI.confirm_reset_btn.addEventListener('click', resetInventory);
+            ['cancel_modal_btn', 'cancel_delete_btn', 'cancel_initial_stock_btn', 'cancel_reset_btn'].forEach(id => allUI[id].addEventListener('click', (e) => closeGenericModal(e.currentTarget.closest('.modal-backdrop'))));
             allUI.inventory_table_container.addEventListener('click', (e) => { if (e.target.closest('.edit-btn')) { const p = allProducts.find(p => p.id === e.target.closest('.edit-btn').dataset.id); if(p) openModal('edit', p); } if (e.target.closest('.delete-btn')) { openDeleteModal(e.target.closest('.delete-btn').dataset.id); } });
             allUI.inventory_search.addEventListener('input', () => renderInventoryTable(allProducts));
-            allUI.scan_mode_add.addEventListener('click', () => { scanMode = 'add'; allUI.scan_mode_add.classList.add('bg-white', 'text-amber-600', 'shadow'); allUI.scan_mode_sell.classList.remove('bg-white', 'text-blue-600', 'shadow'); allUI.submit_scan.textContent = 'Add to Transaction'; allUI.submit_scan.classList.replace('bg-blue-500', 'bg-amber-500'); });
-            allUI.scan_mode_sell.addEventListener('click', () => { scanMode = 'sell'; allUI.scan_mode_sell.classList.add('bg-white', 'text-blue-600', 'shadow'); allUI.scan_mode_add.classList.remove('bg-white', 'text-amber-600', 'shadow'); allUI.submit_scan.textContent = 'Add to Transaction'; allUI.submit_scan.classList.replace('bg-amber-500', 'bg-blue-500'); });
+            allUI.scan_mode_add.addEventListener('click', () => { scanMode = 'add'; allUI.scan_mode_add.classList.add('bg-white', 'text-amber-600', 'shadow'); allUI.scan_mode_sell.classList.remove('bg-white', 'text-blue-600', 'shadow'); allUI.submit_scan.classList.replace('bg-blue-500', 'bg-amber-500'); });
+            allUI.scan_mode_sell.addEventListener('click', () => { scanMode = 'sell'; allUI.scan_mode_sell.classList.add('bg-white', 'text-blue-600', 'shadow'); allUI.scan_mode_add.classList.remove('bg-white', 'text-amber-600', 'shadow'); allUI.submit_scan.classList.replace('bg-amber-500', 'bg-blue-500'); });
             allUI.submit_scan.addEventListener('click', handleScanSubmit);
             allUI.barcode_input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleScanSubmit(); });
             allUI.scan_camera_btn.addEventListener('click', startScanner);
