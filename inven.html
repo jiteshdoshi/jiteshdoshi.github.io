@@ -71,8 +71,19 @@
 
     <div id="app" class="h-screen w-screen flex flex-col">
         <!-- Header -->
-        <header class="bg-blue-600 text-white shadow-lg p-4 flex items-center justify-center z-20 flex-shrink-0">
-            <h1 class="text-xl font-bold">📦 Inventory Manager</h1>
+        <header class="bg-blue-600 text-white shadow-lg p-4 flex items-center justify-between z-20 flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                <img src="https://static.wixstatic.com/media/311af0_85acadb4f0c246959f774351d0564f08~mv2.png/v1/fill/w_70,h_80,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Logo-png-Dark-Name_edited.png" 
+                     alt="The Honey Shelter Logo" 
+                     class="h-10 w-auto">
+                <div>
+                    <h1 class="text-lg font-bold">The Honey Shelter</h1>
+                    <p class="text-xs text-blue-100">Inventory Manager</p>
+                </div>
+            </div>
+            <div class="text-xs text-blue-100">
+                📦 Offline Ready
+            </div>
         </header>
 
         <!-- Tab Navigation -->
@@ -210,6 +221,7 @@
                                         <th class="px-4 py-3 text-left">Barcode</th>
                                         <th class="px-4 py-3 text-right">Stock</th>
                                         <th class="px-4 py-3 text-right">Sold Today</th>
+                                        <th class="px-4 py-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="inventory-list">
@@ -293,6 +305,25 @@
         </div>
     </div>
 
+    <!-- Quick Edit Modal -->
+    <div id="quick-edit-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-sm transform scale-95">
+            <h2 class="text-lg font-bold text-center mb-4">✏️ Quick Edit Stock</h2>
+            <div class="mb-4">
+                <div id="edit-product-info" class="text-center mb-4">
+                    <!-- Product info will be displayed here -->
+                </div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">New Quantity</label>
+                <input type="number" id="edit-quantity-input" min="0" 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg">
+            </div>
+            <div class="flex gap-3">
+                <button id="cancel-edit" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">Cancel</button>
+                <button id="save-edit" class="flex-1 bg-blue-600 text-white py-3 rounded-lg">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initial product data
         const initialProducts = [
@@ -331,6 +362,7 @@
         let currentScanner = null; // Track which input is being scanned for
         let saleStaging = []; // Staging area for sales
         let inventoryStaging = []; // Staging area for inventory updates
+        let editingProductId = null; // Track which product is being edited
 
         // Load data from localStorage
         function loadData() {
@@ -684,6 +716,13 @@
             // Reset modal handlers
             document.getElementById('cancel-reset').addEventListener('click', closeResetModal);
             document.getElementById('confirm-reset').addEventListener('click', resetInventory);
+            
+            // Quick edit modal handlers
+            document.getElementById('cancel-edit').addEventListener('click', closeQuickEditModal);
+            document.getElementById('save-edit').addEventListener('click', saveQuickEdit);
+            document.getElementById('edit-quantity-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') saveQuickEdit();
+            });
         }
 
         function addToInventoryStaging() {
@@ -838,6 +877,11 @@
                             ${product.quantity}
                         </td>
                         <td class="px-4 py-3 text-right text-blue-600 font-medium">${soldToday}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="openQuickEdit('${product.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600">
+                                ✏️ Edit
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -847,6 +891,62 @@
             const modal = document.getElementById('reset-modal');
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+
+        function openQuickEdit(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            editingProductId = productId;
+            
+            // Update modal content
+            document.getElementById('edit-product-info').innerHTML = `
+                <div class="font-medium text-lg">${product.name}</div>
+                <div class="text-sm text-gray-500">${product.variant}</div>
+                <div class="text-xs text-gray-400 mt-1">Current Stock: ${product.quantity}</div>
+            `;
+            
+            document.getElementById('edit-quantity-input').value = product.quantity;
+            
+            // Show modal
+            const modal = document.getElementById('quick-edit-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+            
+            // Focus and select the input
+            setTimeout(() => {
+                const input = document.getElementById('edit-quantity-input');
+                input.focus();
+                input.select();
+            }, 100);
+        }
+
+        function closeQuickEditModal() {
+            const modal = document.getElementById('quick-edit-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+            editingProductId = null;
+        }
+
+        function saveQuickEdit() {
+            if (!editingProductId) return;
+            
+            const newQuantity = parseInt(document.getElementById('edit-quantity-input').value);
+            if (isNaN(newQuantity) || newQuantity < 0) {
+                showNotification('Please enter a valid quantity', 'error');
+                return;
+            }
+            
+            const product = products.find(p => p.id === editingProductId);
+            if (product) {
+                const oldQuantity = product.quantity;
+                product.quantity = newQuantity;
+                saveData();
+                updateInventoryDisplay();
+                closeQuickEditModal();
+                
+                showNotification(`Updated ${product.name} stock from ${oldQuantity} to ${newQuantity}`);
+            }
         }
 
         function resetInventory() {
@@ -987,6 +1087,7 @@
             window.removeSaleItem = removeSaleItem;
             window.adjustInventoryQuantity = adjustInventoryQuantity;
             window.removeInventoryItem = removeInventoryItem;
+            window.openQuickEdit = openQuickEdit;
         });
     </script>
 </body>
