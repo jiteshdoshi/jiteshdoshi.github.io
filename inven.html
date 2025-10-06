@@ -354,9 +354,11 @@
                         
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-
                             <button id="manual-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
                                 🔄 Manual Sync
+                            </button>
+                            <button id="refresh-ui-btn" class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg text-sm">
+                                🔄 Refresh UI
                             </button>
                         </div>
                         
@@ -1063,7 +1065,16 @@
         }
 
         function updateInventoryDisplay() {
+            console.log('updateInventoryDisplay called');
             const tbody = document.getElementById('inventory-list');
+            
+            if (!tbody) {
+                console.error('inventory-list element not found!');
+                return;
+            }
+            
+            console.log('Updating inventory display with', products.length, 'products');
+            console.log('First few products:', products.slice(0, 3).map(p => `${p.name}: ${p.quantity}`));
             
             tbody.innerHTML = products.map(product => {
                 const soldToday = sales
@@ -1090,6 +1101,8 @@
                     </tr>
                 `;
             }).join('');
+            
+            console.log('Inventory display updated successfully');
         }
 
         function closeResetModal() {
@@ -1251,6 +1264,9 @@
                 }
             });
             
+            // Manual UI refresh button
+            document.getElementById('refresh-ui-btn').addEventListener('click', refreshUI);
+            
             // Update device info display
             updateDeviceInfo();
             
@@ -1288,6 +1304,8 @@
             // Merge products (with validation)
             if (Array.isArray(syncData.products)) {
                 console.log('Merging', syncData.products.length, 'products from sync data');
+                console.log('Current products before merge:', products.map(p => `${p.id}: ${p.quantity}`));
+                
                 syncData.products.forEach(syncProduct => {
                     if (syncProduct && syncProduct.id) {
                         const existingProduct = products.find(p => p.id === syncProduct.id);
@@ -1308,6 +1326,8 @@
                         console.warn('Invalid product in sync data:', syncProduct);
                     }
                 });
+                
+                console.log('Products after merge:', products.map(p => `${p.id}: ${p.quantity}`));
             } else {
                 console.log('No products array in sync data or products is not an array');
             }
@@ -1347,16 +1367,37 @@
                 
                 // Save merged data
                 saveData();
+                
+                // Force UI updates for all components
                 updateInventoryDisplay();
                 updateTodaysSales();
                 updateReports();
                 updateDeviceInfo();
+                
+                // Also update staging areas in case user is currently adding items
+                updateSaleStaging();
+                updateInventoryStaging();
                 
                 console.log('Data merged and UI updated from remote sync');
                 showNotification('Data synchronized successfully');
             } else {
                 console.log('No changes detected in sync data');
             }
+        }
+
+        function refreshUI() {
+            console.log('Manual UI refresh called');
+            console.log('Current products state:', products.map(p => `${p.name} (${p.id}): ${p.quantity}`));
+            console.log('Current sales state:', sales.length, 'sales');
+            
+            updateInventoryDisplay();
+            updateTodaysSales();
+            updateReports();
+            updateDeviceInfo();
+            updateSaleStaging();
+            updateInventoryStaging();
+            
+            showNotification('UI refreshed manually');
         }
 
         // Firebase sync functions
