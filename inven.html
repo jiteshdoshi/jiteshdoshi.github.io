@@ -10,8 +10,11 @@
     
     <!-- Firebase SDK -->
     <script type="module">
+        console.log('Loading Firebase SDK...');
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        console.log('Firebase imports loaded successfully');
         
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -25,18 +28,32 @@
             measurementId: "G-2FCPZ9NLP5"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        
-        // Make Firebase functions available globally
-        window.firebaseDB = database;
-        window.firebaseRef = ref;
-        window.firebaseSet = set;
-        window.firebaseGet = get;
-        window.firebaseOnValue = onValue;
-        window.serverTimestamp = serverTimestamp;
-        window.firebaseReady = true;
+        console.log('Firebase config:', firebaseConfig);
+
+        try {
+            // Initialize Firebase
+            console.log('Initializing Firebase app...');
+            const app = initializeApp(firebaseConfig);
+            console.log('Firebase app initialized:', app);
+            
+            console.log('Getting database instance...');
+            const database = getDatabase(app);
+            console.log('Database instance created:', database);
+            
+            // Make Firebase functions available globally
+            window.firebaseDB = database;
+            window.firebaseRef = ref;
+            window.firebaseSet = set;
+            window.firebaseGet = get;
+            window.firebaseOnValue = onValue;
+            window.serverTimestamp = serverTimestamp;
+            window.firebaseReady = true;
+            
+            console.log('Firebase setup complete - all functions available globally');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            window.firebaseError = error;
+        }
     </script>
     <style>
         body {
@@ -1282,14 +1299,25 @@
 
         // Firebase sync functions
         function waitForFirebase() {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
+                console.log('Waiting for Firebase to be ready...');
                 if (window.firebaseReady) {
+                    console.log('Firebase is ready!');
                     resolve();
                 } else {
+                    console.log('Firebase not ready yet, waiting...');
+                    let attempts = 0;
                     const checkFirebase = setInterval(() => {
+                        attempts++;
+                        console.log('Checking Firebase readiness, attempt:', attempts);
                         if (window.firebaseReady) {
+                            console.log('Firebase is now ready!');
                             clearInterval(checkFirebase);
                             resolve();
+                        } else if (attempts > 50) { // 5 seconds timeout
+                            console.error('Firebase initialization timeout');
+                            clearInterval(checkFirebase);
+                            reject(new Error('Firebase initialization timeout'));
                         }
                     }, 100);
                 }
@@ -1298,49 +1326,64 @@
 
         async function syncToFirebase() {
             try {
+                console.log('Starting Firebase sync...');
                 await waitForFirebase();
+                console.log('Firebase ready, starting sync to session:', sessionId);
                 updateConnectionStatus('Syncing to Firebase...', 'yellow');
                 
                 const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
-                await window.firebaseSet(dataRef, {
+                console.log('Created Firebase reference:', dataRef);
+                
+                const syncData = {
                     products: products,
                     sales: sales,
                     deviceId: deviceId,
                     sessionId: sessionId,
                     lastUpdated: window.serverTimestamp(),
                     timestamp: new Date().toISOString()
-                });
+                };
+                console.log('Syncing data:', syncData);
                 
-                updateConnectionStatus('Auto-sync enabled', 'green');
+                await window.firebaseSet(dataRef, syncData);
+                console.log('Firebase sync successful!');
+                
+                updateConnectionStatus('Sync completed', 'green');
                 showNotification('Data synced to Firebase');
             } catch (error) {
                 console.error('Firebase sync error:', error);
-                updateConnectionStatus('Firebase sync failed', 'red');
+                console.error('Error details:', error.code, error.message);
+                updateConnectionStatus('Firebase sync failed: ' + error.message, 'red');
                 showNotification('Sync failed: ' + error.message, 'error');
             }
         }
 
         async function syncFromFirebase() {
             try {
+                console.log('Starting Firebase read...');
                 await waitForFirebase();
+                console.log('Firebase ready, reading from session:', sessionId);
                 updateConnectionStatus('Getting data from Firebase...', 'yellow');
                 
                 const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
+                console.log('Reading from Firebase reference:', dataRef);
                 const snapshot = await window.firebaseGet(dataRef);
                 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
+                    console.log('Received data from Firebase:', data);
                     mergeSyncData(data);
-                    updateConnectionStatus('Auto-sync enabled', 'green');
+                    updateConnectionStatus('Sync completed', 'green');
                     showNotification('Data synced from Firebase');
                 } else {
-                    updateConnectionStatus('Auto-sync enabled', 'green');
+                    console.log('No existing data found, creating new session');
+                    updateConnectionStatus('Creating new session...', 'yellow');
                     // First time for this session, sync our data
-                    syncToFirebase();
+                    await syncToFirebase();
                 }
             } catch (error) {
-                console.error('Firebase sync error:', error);
-                updateConnectionStatus('Firebase sync failed', 'red');
+                console.error('Firebase read error:', error);
+                console.error('Error details:', error.code, error.message);
+                updateConnectionStatus('Firebase sync failed: ' + error.message, 'red');
                 showNotification('Sync failed: ' + error.message, 'error');
             }
         }
