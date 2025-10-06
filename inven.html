@@ -206,14 +206,6 @@
 
     <script>
         // --- IMPORTANT SETUP ---
-        // 1. Open your Google Sheet.
-        // 2. Go to Extensions > Apps Script.
-        // 3. Copy the code from `google-apps-script.js` into the script editor and save.
-        // 4. Click "Deploy" > "New deployment".
-        // 5. Select "Web app" as the type.
-        // 6. Under "Who has access", select "Anyone with Google account" or "Anyone".
-        // 7. Click "Deploy". Authorize the script when prompted.
-        // 8. Copy the "Web app URL" and paste it below.
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNVtUgUtvKqFC8rdWsk12FwlbCJUn0OCcoVPw2td-7ZKaGHzfb2sM9wfrC4gt9N7Y/exec';
 
         // Initial product data (used for creating new sessions)
@@ -230,56 +222,8 @@
         let inventoryStaging = [];
         let editingProductId = null;
         let currentSheetName = '';
-
-        // --- UI & Notifications ---
-        function showNotification(message, type = 'success') { /* Unchanged */ }
-        function initTabs() { /* Unchanged */ }
-        function refreshAllUI() { /* Unchanged */ }
-        function initScanner() { /* Unchanged */ }
-        function openScanner() { /* Unchanged */ }
-        function closeScanner() { /* Unchanged */ }
-        function initSales() { /* Unchanged */ }
-        function addToSaleStaging() { /* Unchanged */ }
-        function updateSaleStaging() { /* Unchanged */ }
-        window.adjustSaleQuantity = (index, change) => { /* Unchanged */ };
-        window.removeSaleItem = (index) => { /* Unchanged */ };
-        function clearSaleStaging() { /* Unchanged */ }
-        function updateTodaysSales() { /* Unchanged */ }
-        function initInventory() { /* Unchanged (Reset logic moved) */ }
-        function addToInventoryStaging() { /* Unchanged */ }
-        function updateInventoryStaging() { /* Unchanged */ }
-        window.adjustInventoryQuantity = (index, change) => { /* Unchanged */ };
-        window.removeInventoryItem = (index) => { /* Unchanged */ };
-        function clearInventoryStaging() { /* Unchanged */ }
-        function updateInventoryDisplay() { /* Unchanged */ }
-        window.openQuickEdit = (productId) => { /* Unchanged */ };
-        function closeQuickEditModal() { /* Unchanged */ }
-        function updateReports() { /* Unchanged */ }
-        function updateSalesReport() { /* Unchanged */ }
-        function showLoading(text) {
-            document.getElementById('loading-text').textContent = text;
-            document.getElementById('loading-overlay').classList.remove('hidden');
-        }
-        function hideLoading() {
-            document.getElementById('loading-overlay').classList.add('hidden');
-        }
-        function updateSyncStatus(message, color) {
-            const statusInfo = document.getElementById('sync-status-info');
-            const statusBar = document.getElementById('sync-status-bar');
-            if(statusInfo) statusInfo.textContent = message;
-            
-            const colorMap = {
-                green: ['bg-green-50', 'border-green-200'],
-                red: ['bg-red-50', 'border-red-200'],
-                yellow: ['bg-yellow-50', 'border-yellow-200'],
-                default: ['bg-gray-50', 'border-gray-200'],
-            };
-            const [bg, border] = colorMap[color] || colorMap.default;
-            if(statusBar) statusBar.className = `mt-4 p-3 border rounded-lg ${bg} ${border}`;
-        }
         
         // --- Google Sheets API Functions ---
-
         async function loadDataFromSheets() {
             if (GOOGLE_SCRIPT_URL.includes('PASTE_YOUR_URL')) {
                 alert('Please paste your Google Apps Script Web App URL into the GOOGLE_SCRIPT_URL variable in the script tag.');
@@ -312,7 +256,6 @@
                 }
                 showNotification(`Error: ${userMessage}`, 'error');
                 updateSyncStatus(`Error: ${userMessage}`, 'red');
-                // Load initial products as a fallback
                 products = JSON.parse(JSON.stringify(initialProducts));
                 sales = [];
                 refreshAllUI();
@@ -336,7 +279,7 @@
                 };
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Required for Apps Script
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
                     body: JSON.stringify(payload)
                 });
 
@@ -373,7 +316,7 @@
                 
                 if (result.status === 'success') {
                     showNotification(`New session '${result.sheetName}' created.`, 'success');
-                    await loadDataFromSheets(); // Reload data from the new sheet
+                    await loadDataFromSheets();
                 } else {
                     throw new Error(result.message || 'Failed to create new session.');
                 }
@@ -385,8 +328,6 @@
                 hideLoading();
             }
         }
-
-        // --- Modified Core Logic to Integrate Sheets ---
 
         async function confirmSale() {
             if (saleStaging.length === 0) return;
@@ -433,13 +374,11 @@
             }
         }
 
-        // --- App Startup ---
         document.addEventListener('DOMContentLoaded', () => {
             initTabs();
             initScanner();
             initSales();
             
-            // --- MODIFIED INVENTORY INIT ---
             document.getElementById('add-to-inventory-staging-btn').addEventListener('click', addToInventoryStaging);
             document.getElementById('inv-barcode').addEventListener('keypress', (e) => e.key === 'Enter' && addToInventoryStaging());
             document.getElementById('confirm-inventory-btn').addEventListener('click', confirmInventoryUpdates);
@@ -456,12 +395,28 @@
             loadDataFromSheets();
         });
         
-    // Keep functions that are pure UI/State and don't interact with storage
-    // The following functions are called by UI elements and are kept as they were,
-    // because their core logic (modifying staging arrays, etc.) is still valid.
-    // The functions that confirm these changes (confirmSale, etc.) have been
-    // modified above to call saveDataToSheets().
-    showNotification = function(message, type = 'success') {
+    function showLoading(text) {
+        document.getElementById('loading-text').textContent = text;
+        document.getElementById('loading-overlay').classList.remove('hidden');
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+    }
+    function updateSyncStatus(message, color) {
+        const statusInfo = document.getElementById('sync-status-info');
+        const statusBar = document.getElementById('sync-status-bar');
+        if(statusInfo) statusInfo.textContent = message;
+        
+        const colorMap = {
+            green: ['bg-green-50', 'border-green-200'],
+            red: ['bg-red-50', 'border-red-200'],
+            yellow: ['bg-yellow-50', 'border-yellow-200'],
+            default: ['bg-gray-50', 'border-gray-200'],
+        };
+        const [bg, border] = colorMap[color] || colorMap.default;
+        if(statusBar) statusBar.className = `mt-4 p-3 border rounded-lg ${bg} ${border}`;
+    }
+    function showNotification(message, type = 'success') {
         const notification = document.getElementById('notification');
         const text = document.getElementById('notification-text');
         text.textContent = message;
@@ -471,7 +426,7 @@
         notification.classList.remove('hidden');
         setTimeout(() => notification.classList.add('hidden'), 3000);
     }
-    initTabs = function() {
+    function initTabs() {
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
         tabBtns.forEach(btn => {
@@ -486,7 +441,7 @@
             });
         });
     }
-    refreshAllUI = function() {
+    function refreshAllUI() {
         console.log('Refreshing all UI components.');
         updateInventoryDisplay();
         updateTodaysSales();
@@ -495,13 +450,13 @@
         updateSaleStaging();
         updateInventoryStaging();
     }
-    initScanner = function() {
+    function initScanner() {
         html5QrCode = new Html5Qrcode("reader");
         document.getElementById('scan-btn').addEventListener('click', () => { currentScanner = 'sales'; openScanner(); });
         document.getElementById('inv-scan-btn').addEventListener('click', () => { currentScanner = 'inventory'; openScanner(); });
         document.getElementById('close-scanner').addEventListener('click', closeScanner);
     }
-    openScanner = function() {
+    function openScanner() {
         const modal = document.getElementById('scanner-modal');
         modal.classList.remove('opacity-0', 'pointer-events-none');
         modal.querySelector('.modal-content').classList.remove('scale-95');
@@ -515,24 +470,32 @@
             }, () => {}
         ).catch(err => document.getElementById('scanner-status').textContent = 'Camera unavailable.');
     }
-    closeScanner = function() {
+    function closeScanner() {
         const modal = document.getElementById('scanner-modal');
         if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
         modal.classList.add('opacity-0', 'pointer-events-none');
         modal.querySelector('.modal-content').classList.add('scale-95');
     }
-    initSales = function() {
+    function initSales() {
         document.getElementById('add-to-sale-btn').addEventListener('click', addToSaleStaging);
         document.getElementById('barcode-input').addEventListener('keypress', (e) => e.key === 'Enter' && addToSaleStaging());
         document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
         document.getElementById('clear-sale-staging').addEventListener('click', clearSaleStaging);
     }
-    addToSaleStaging = function() {
+    function addToSaleStaging() {
         const barcode = document.getElementById('barcode-input').value.trim();
         const quantity = parseInt(document.getElementById('quantity-input').value);
         if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
-        const product = products.find(p => p.code === barcode);
-        if (!product) return showNotification('Product not found.', 'error');
+
+        console.log(`Searching for barcode: "${barcode}" (type: ${typeof barcode})`);
+        // FIX: Compare as strings to prevent type mismatch (e.g., number vs string)
+        const product = products.find(p => String(p.code) === String(barcode));
+        
+        if (!product) {
+            console.log('Product not found. Current product codes:', products.map(p => p.code));
+            return showNotification('Product not found.', 'error');
+        }
+
         const existing = saleStaging.find(item => item.productId === product.id);
         if (existing) existing.quantity += quantity;
         else saleStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity: quantity, maxQuantity: product.quantity });
@@ -541,7 +504,7 @@
         document.getElementById('barcode-input').value = '';
         document.getElementById('quantity-input').value = '1';
     }
-    updateSaleStaging = function() {
+    function updateSaleStaging() {
         const container = document.getElementById('sale-staging');
         const confirmBtn = document.getElementById('confirm-sale-btn');
         if (saleStaging.length === 0) {
@@ -580,8 +543,8 @@
         }
     };
     window.removeSaleItem = function(index) { saleStaging.splice(index, 1); updateSaleStaging(); };
-    clearSaleStaging = function() { saleStaging = []; updateSaleStaging(); }
-    updateTodaysSales = function() {
+    function clearSaleStaging() { saleStaging = []; updateSaleStaging(); }
+    function updateTodaysSales() {
         const container = document.getElementById('today-sales');
         const todaySales = sales.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString());
         if (todaySales.length === 0) {
@@ -594,12 +557,20 @@
                 <div class="text-right"><div class="font-semibold">${sale.quantity}</div><div class="text-xs text-gray-500">${new Date(sale.timestamp).toLocaleTimeString()}</div></div>
             </div>`).join('');
     }
-    addToInventoryStaging = function() {
+    function addToInventoryStaging() {
         const barcode = document.getElementById('inv-barcode').value.trim();
         const quantity = parseInt(document.getElementById('inv-quantity').value);
         if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
-        const product = products.find(p => p.code === barcode);
-        if (!product) return showNotification('Product not found.', 'error');
+        
+        console.log(`Searching for barcode: "${barcode}" (type: ${typeof barcode})`);
+        // FIX: Compare as strings to prevent type mismatch
+        const product = products.find(p => String(p.code) === String(barcode));
+
+        if (!product) {
+            console.log('Product not found. Current product codes:', products.map(p => p.code));
+            return showNotification('Product not found.', 'error');
+        }
+
         const existing = inventoryStaging.find(item => item.productId === product.id);
         if (existing) existing.quantity += quantity;
         else inventoryStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity });
@@ -608,7 +579,7 @@
         document.getElementById('inv-barcode').value = '';
         document.getElementById('inv-quantity').value = '1';
     }
-    updateInventoryStaging = function() {
+    function updateInventoryStaging() {
         const container = document.getElementById('inventory-staging');
         const confirmBtn = document.getElementById('confirm-inventory-btn');
         if (inventoryStaging.length === 0) {
@@ -636,8 +607,8 @@
         }
     };
     window.removeInventoryItem = function(index) { inventoryStaging.splice(index, 1); updateInventoryStaging(); };
-    clearInventoryStaging = function() { inventoryStaging = []; updateInventoryStaging(); }
-    updateInventoryDisplay = function() {
+    function clearInventoryStaging() { inventoryStaging = []; updateInventoryStaging(); }
+    function updateInventoryDisplay() {
         const tbody = document.getElementById('inventory-list');
         if (!tbody) return;
         tbody.innerHTML = products.map(product => {
@@ -661,11 +632,11 @@
         document.getElementById('quick-edit-modal').classList.remove('opacity-0', 'pointer-events-none');
         setTimeout(() => document.getElementById('edit-quantity-input').focus(), 50);
     };
-    closeQuickEditModal = function() {
+    function closeQuickEditModal() {
         document.getElementById('quick-edit-modal').classList.add('opacity-0', 'pointer-events-none');
         editingProductId = null;
     }
-    updateReports = function() {
+    function updateReports() {
         const totalSales = sales.reduce((sum, s) => sum + s.quantity, 0);
         const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
         const lowStock = products.filter(p => p.quantity > 0 && p.quantity <= 5).length;
@@ -674,7 +645,7 @@
         document.getElementById('low-stock').textContent = lowStock;
         updateSalesReport();
     }
-    updateSalesReport = function() {
+    function updateSalesReport() {
         const container = document.getElementById('sales-report');
         if (sales.length === 0) return container.innerHTML = '<p class="text-gray-500 text-center py-8">No sales data available</p>';
         const sortedSales = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
