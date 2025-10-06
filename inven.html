@@ -570,10 +570,30 @@
             saleStaging = [];
             inventoryStaging = [];
             saveData();
-            refreshAllUI();
-            document.getElementById('reset-modal').classList.add('opacity-0', 'pointer-events-none');
             generateNewSession();
-            showNotification('New session started. Inventory has been reset.');
+            // Immediately create a new instance in Supabase for the new session
+            (async () => {
+                updateSyncStatus('Creating new session in cloud...', 'yellow');
+                const syncData = {
+                    session_id: sessionId,
+                    device_id: deviceId,
+                    products: products || [],
+                    sales: sales || [],
+                    last_updated: new Date().toISOString()
+                };
+                const { error } = await window.supabaseClient
+                    .from('inventory_sessions')
+                    .upsert([syncData], { onConflict: 'session_id', returning: 'minimal' });
+                if (error) {
+                    updateSyncStatus('Failed to create session in cloud', 'red');
+                    showNotification('Cloud session creation failed: ' + error.message, 'error');
+                } else {
+                    updateSyncStatus('New session created in cloud', 'green');
+                    showNotification('New session started and synced to cloud.');
+                }
+                refreshAllUI();
+                document.getElementById('reset-modal').classList.add('opacity-0', 'pointer-events-none');
+            })();
         }
 
         window.openQuickEdit = (productId) => {
@@ -758,21 +778,56 @@
                 // Start sync animation
                 const syncIcon = document.getElementById('sync-icon');
                 const syncBtn = document.getElementById('sync-btn');
-                
                 if (syncIcon && syncBtn) {
                     syncIcon.style.animation = 'spin 1s linear infinite';
                     syncBtn.disabled = true;
                 }
-                
-                // First sync to cloud, then sync from cloud to get any updates
-                await syncToSupabase();
-                await syncFromSupabase();
-                
+
+                // 1. Get cloud data for current session
+                updateSyncStatus('Getting data from cloud...', 'yellow');
+                const { data: remoteData, error: fetchError } = await window.supabaseClient
+                    .from('inventory_sessions')
+                    .select('*')
+                    .eq('session_id', sessionId)
+                    .single();
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                    updateSyncStatus('Failed to load data: ' + fetchError.message, 'red');
+                    showNotification('Failed to load data: ' + fetchError.message, 'error');
+                    return;
+                }
+
+                // 2. Merge cloud and local data
+                if (remoteData) {
+                    mergeSyncData(remoteData);
+                }
+
+                // 3. Sync merged data back to cloud
+                updateSyncStatus('Syncing to cloud...', 'yellow');
+                const syncData = {
+                    session_id: sessionId,
+                    device_id: deviceId,
+                    products: products || [],
+                    sales: sales || [],
+                    last_updated: new Date().toISOString()
+                };
+                const { error: upsertError } = await window.supabaseClient
+                    .from('inventory_sessions')
+                    .upsert([syncData], { onConflict: 'session_id', returning: 'minimal' });
+                if (upsertError) {
+                    updateSyncStatus('Sync failed: ' + upsertError.message, 'red');
+                    showNotification('Sync failed: ' + upsertError.message, 'error');
+                } else {
+                    updateSyncStatus('Data synced successfully', 'green');
+                    showNotification('Data synced to cloud');
+                }
+
+                // 4. Refresh UI to reflect merged data
+                refreshAllUI();
+
             } finally {
                 // Stop sync animation
                 const syncIcon = document.getElementById('sync-icon');
                 const syncBtn = document.getElementById('sync-btn');
-                
                 if (syncIcon && syncBtn) {
                     syncIcon.style.animation = '';
                     syncBtn.disabled = false;
