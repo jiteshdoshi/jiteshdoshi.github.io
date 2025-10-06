@@ -134,7 +134,9 @@
                     <div class="card p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold">Current Inventory</h3>
-                            <button id="reset-btn" class="btn-danger text-white py-2 px-4 rounded-lg text-sm">🔄 Create New Session Sheet</button>
+                            <button id="sync-refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm flex items-center gap-2">
+                                <span id="sync-icon">🔄</span> Sync & Refresh
+                            </button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
@@ -171,7 +173,11 @@
                             <div class="text-sm font-medium text-gray-700">Current Session Sheet</div>
                             <div class="text-xs text-gray-500" id="session-info">Loading...</div>
                         </div>
-                         <button id="refresh-ui-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg text-sm">🔄 Force Refresh UI</button>
+                         <button id="reset-btn" class="w-full btn-danger text-white py-3 px-4 rounded-lg text-sm mb-4">🆕 Create New Session Sheet</button>
+                         <h4 class="text-md font-semibold mb-2">Switch to a Recent Session</h4>
+                         <div id="recent-sessions" class="space-y-2">
+                            <p class="text-sm text-gray-500">Loading recent sessions...</p>
+                         </div>
                     </div>
                 </div>
             </div>
@@ -189,7 +195,7 @@
     <div id="reset-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
         <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-sm transform scale-95">
             <h2 class="text-lg font-bold text-center mb-4">🔄 Create New Session Sheet</h2>
-            <p class="text-gray-600 mb-6 text-center">This will create a new sheet for a new session. All current data will be saved. Continue?</p>
+            <p class="text-gray-600 mb-6 text-center">This will create a new sheet with a zeroed-out inventory. This new sheet will become the active session for all devices. Continue?</p>
             <div class="flex gap-3"><button id="cancel-reset" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">Cancel</button><button id="confirm-reset" class="flex-1 bg-red-500 text-white py-3 rounded-lg">Create New</button></div>
         </div>
     </div>
@@ -205,131 +211,214 @@
     </div>
 
     <script>
-        // --- IMPORTANT SETUP ---
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNVtUgUtvKqFC8rdWsk12FwlbCJUn0OCcoVPw2td-7ZKaGHzfb2sM9wfrC4gt9N7Y/exec';
-
-        // Initial product data (used for creating new sessions)
-        const initialProducts = [
-            { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 }, { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 }, { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 }, { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 }, { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 }, { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 }, { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 }, { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 }, { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 }, { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 }, { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 }, { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 }, { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 }, { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 }, { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 }, { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 }, { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 }, { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 }, { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 }, { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 }, { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 }, { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 }, { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 }, { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 }, { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 }, { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 }
-        ];
 
         // --- App State ---
         let products = [];
         let sales = [];
+        let baseProducts = []; // Used for merging
+        let baseSales = []; // Used for merging
         let html5QrCode = null;
         let currentScanner = null;
         let saleStaging = [];
         let inventoryStaging = [];
         let editingProductId = null;
-        let currentSheetName = '';
+        let activeSheetName = '';
+        let isSyncing = false;
+
+        // --- App Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initUI();
+            loadInitialData();
+        });
+
+        function initUI() {
+            initTabs();
+            initScanner();
+            initSales();
+            initInventory();
+            document.getElementById('sync-refresh-btn').addEventListener('click', syncAndRefresh);
+        }
         
-        // --- Google Sheets API Functions ---
-        async function loadDataFromSheets() {
-            if (GOOGLE_SCRIPT_URL.includes('PASTE_YOUR_URL')) {
-                alert('Please paste your Google Apps Script Web App URL into the GOOGLE_SCRIPT_URL variable in the script tag.');
-                hideLoading();
-                return;
+        async function loadInitialData() {
+            await loadDataFromSheets(); // Load latest sheet by default
+            await loadRecentSessions();
+        }
+
+        // --- Google Sheets API ---
+        async function callGoogleScript(action, payload = {}) {
+            if (isSyncing) {
+                showNotification("Sync already in progress.", "error");
+                return null;
             }
-            showLoading('Fetching latest session from Google Sheets...');
-            updateSyncStatus('Loading...', 'yellow');
+            isSyncing = true;
+            showLoading(payload.loadingText || 'Contacting Google Sheets...');
+            updateSyncStatus(payload.statusText || 'Connecting...', 'yellow');
+
             try {
-                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getLatestSheetData`, { method: 'GET' });
+                let url = GOOGLE_SCRIPT_URL;
+                const options = {};
+                
+                const isPostAction = action === 'updateSheetData' || action === 'createNewSession';
+
+                if (isPostAction) {
+                     options.method = 'POST';
+                     options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+                     options.body = JSON.stringify({ action, ...payload });
+                } else {
+                    // This is a GET request.
+                    options.method = 'GET';
+                    const params = new URLSearchParams({ action });
+                    if (payload.sheetName) {
+                        params.append('sheetName', payload.sheetName);
+                    }
+                    url = `${GOOGLE_SCRIPT_URL}?${params.toString()}`;
+                }
+
+                const response = await fetch(url, options);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
-
-                if (data.status === 'success') {
-                    products = data.products || JSON.parse(JSON.stringify(initialProducts));
-                    sales = data.sales || [];
-                    currentSheetName = data.sheetName;
-                    document.getElementById('session-info').textContent = currentSheetName;
-                    showNotification('Data loaded from ' + currentSheetName, 'success');
-                    updateSyncStatus('Loaded from ' + currentSheetName, 'green');
-                } else {
-                    throw new Error(data.message || 'Failed to parse data from sheet.');
+                if (data.status === 'error') {
+                    let detailedMessage = data.message;
+                    if (data.message === "Invalid GET action" || data.message === "Invalid POST action") {
+                        detailedMessage += " - Please ensure the latest version of the Google Apps Script is deployed.";
+                    }
+                    throw new Error(detailedMessage);
                 }
-                refreshAllUI();
+                return data;
             } catch (error) {
-                console.error('Error loading data from Google Sheets:', error);
-                let userMessage = error.message;
-                if (userMessage.includes('Range not found')) {
-                    userMessage = 'Could not read from sheet. If the sheet is new or empty, please ensure the latest version of the Google Apps Script is deployed.';
-                }
-                showNotification(`Error: ${userMessage}`, 'error');
-                updateSyncStatus(`Error: ${userMessage}`, 'red');
-                products = JSON.parse(JSON.stringify(initialProducts));
-                sales = [];
-                refreshAllUI();
+                console.error(`Error during action "${action}":`, error);
+                showNotification(`Error: ${error.message}`, 'error');
+                updateSyncStatus(`Error: ${error.message}`, 'red');
+                return null; // Return null on failure
             } finally {
+                isSyncing = false;
                 hideLoading();
             }
         }
         
-        async function saveDataToSheets() {
-            if (!currentSheetName) {
-                showNotification('No active session sheet. Cannot save.', 'error');
-                return;
-            }
-            updateSyncStatus(`Saving to ${currentSheetName}...`, 'yellow');
-            try {
-                const payload = {
-                    action: 'updateSheetData',
-                    sheetName: currentSheetName,
-                    products: products,
-                    sales: sales
-                };
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-                    body: JSON.stringify(payload)
-                });
+        async function loadDataFromSheets(sheetName = '') {
+            const data = await callGoogleScript('getSheetData', { 
+                sheetName: sheetName,
+                loadingText: sheetName ? `Loading data from ${sheetName}...` : 'Loading latest session...',
+                statusText: 'Fetching data...'
+            });
 
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    showNotification('Data saved to Google Sheets.', 'success');
-                    updateSyncStatus('Synced successfully.', 'green');
-                } else {
-                    throw new Error(result.message || 'Unknown error from Google Sheets.');
-                }
-            } catch (error) {
-                console.error('Error saving data to Google Sheets:', error);
-                showNotification(`Save failed: ${error.message}`, 'error');
-                updateSyncStatus(`Save failed: ${error.message}`, 'red');
+            if (data && data.status === 'success') {
+                products = data.products;
+                sales = data.sales;
+                baseProducts = JSON.parse(JSON.stringify(data.products)); // Deep copy for base state
+                baseSales = JSON.parse(JSON.stringify(data.sales)); // Deep copy for base state
+                activeSheetName = data.sheetName;
+
+                document.getElementById('session-info').textContent = activeSheetName;
+                showNotification(`Loaded data from ${activeSheetName}`, 'success');
+                updateSyncStatus(`Synced with ${activeSheetName}`, 'green');
+                refreshAllUI();
+            }
+        }
+
+        async function loadRecentSessions() {
+            const data = await callGoogleScript('getRecentSheets', { loadingText: 'Fetching recent sessions...' });
+            const container = document.getElementById('recent-sessions');
+            if (data && data.sheets) {
+                container.innerHTML = data.sheets.map(name => `
+                    <button onclick="switchSession('${name}')" class="w-full text-left p-3 rounded-lg ${name === activeSheetName ? 'bg-blue-100 text-blue-800 font-semibold' : 'bg-gray-100 hover:bg-gray-200'}">
+                        ${name}
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = '<p class="text-sm text-gray-500">Could not load recent sessions.</p>';
             }
         }
 
         async function createNewSessionSheet() {
             document.getElementById('reset-modal').classList.add('opacity-0', 'pointer-events-none');
-            showLoading('Creating new session sheet...');
-            updateSyncStatus('Creating new session...', 'yellow');
-            try {
-                const payload = { action: 'createNewSession' };
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    showNotification(`New session '${result.sheetName}' created.`, 'success');
-                    await loadDataFromSheets();
-                } else {
-                    throw new Error(result.message || 'Failed to create new session.');
-                }
-            } catch (error) {
-                 console.error('Error creating new session:', error);
-                showNotification(`Error: ${error.message}`, 'error');
-                updateSyncStatus(`Error: ${error.message}`, 'red');
-            } finally {
-                hideLoading();
+            const data = await callGoogleScript('createNewSession', { loadingText: 'Creating new session sheet...' });
+            if (data && data.sheetName) {
+                await loadDataFromSheets(data.sheetName);
+                await loadRecentSessions();
             }
         }
+        
+        window.switchSession = async (sheetName) => {
+            if (sheetName === activeSheetName) return;
+            await loadDataFromSheets(sheetName);
+            await loadRecentSessions(); // To update the active session highlighting
+        }
+        
+        // --- Merge & Sync Logic ---
+        async function syncAndRefresh() {
+             const syncIcon = document.getElementById('sync-icon');
+             syncIcon.style.animation = 'spin 1s linear infinite';
+             
+             // 1. Fetch the latest state from the cloud (this is our new "base")
+             const remoteData = await callGoogleScript('getSheetData', { 
+                sheetName: activeSheetName,
+                loadingText: 'Fetching latest data for merge...',
+                statusText: 'Refreshing...'
+            });
 
-        async function confirmSale() {
+            if (!remoteData) {
+                syncIcon.style.animation = '';
+                return; // Error handled in callGoogleScript
+            }
+
+            // 2. Merge local changes with remote data
+            // Merge Sales: Combine lists and remove duplicates
+            const combinedSales = [...baseSales, ...sales];
+            const uniqueSales = Array.from(new Map(combinedSales.map(s => [s.id, s])).values());
+            
+            // Merge Products: Apply changes from both local and remote relative to the original base state
+            const mergedProducts = JSON.parse(JSON.stringify(baseProducts));
+            let hasChanges = false;
+
+            products.forEach(localProduct => {
+                const baseProduct = baseProducts.find(p => p.id === localProduct.id);
+                const remoteProduct = remoteData.products.find(p => p.id === localProduct.id);
+                const mergedProduct = mergedProducts.find(p => p.id === localProduct.id);
+
+                if (!baseProduct || !remoteProduct || !mergedProduct) return;
+
+                const localChange = localProduct.quantity - baseProduct.quantity;
+                const remoteChange = remoteProduct.quantity - baseProduct.quantity;
+
+                // If only one side changed, or both changed identically, the result is simple
+                if (localChange !== 0 || remoteChange !== 0) {
+                     // Start with the most up-to-date remote quantity and apply our local changes on top
+                     mergedProduct.quantity = remoteProduct.quantity + localChange;
+                     hasChanges = true;
+                }
+            });
+
+            // If there are new sales, that also counts as a change
+            if (uniqueSales.length > sales.length) hasChanges = true;
+            
+            // 3. Save the merged data back to the sheet
+            if (hasChanges) {
+                const result = await callGoogleScript('updateSheetData', {
+                    sheetName: activeSheetName,
+                    products: mergedProducts,
+                    sales: uniqueSales,
+                    loadingText: 'Saving merged data...',
+                    statusText: 'Syncing...'
+                });
+                
+                if (result) {
+                    // 4. Reload the final state from the sheet to be the new source of truth
+                    await loadDataFromSheets(activeSheetName); 
+                }
+            } else {
+                 showNotification("No new changes to sync.", "success");
+                 updateSyncStatus(`Synced with ${activeSheetName}`, 'green');
+            }
+
+             syncIcon.style.animation = '';
+        }
+
+
+        // --- UI Functions (Sales, Inventory, etc.) ---
+        function confirmSale() {
             if (saleStaging.length === 0) return;
             const errors = saleStaging.filter(item => item.quantity > item.maxQuantity);
             if (errors.length > 0) return showNotification(`Insufficient stock for ${errors[0].productName}.`, 'error');
@@ -344,11 +433,10 @@
 
             refreshAllUI();
             clearSaleStaging();
-            showNotification('Sale recorded. Saving to Google Sheet...', 'success');
-            await saveDataToSheets();
+            showNotification('Sale recorded locally. Press Sync & Refresh to save.', 'success');
         }
 
-        async function confirmInventoryUpdates() {
+        function confirmInventoryUpdates() {
             if (inventoryStaging.length === 0) return;
             inventoryStaging.forEach(item => {
                 const product = products.find(p => p.id === item.productId);
@@ -356,11 +444,10 @@
             });
             refreshAllUI();
             clearInventoryStaging();
-            showNotification('Inventory updated. Saving to Google Sheet...', 'success');
-            await saveDataToSheets();
+            showNotification('Inventory updated locally. Press Sync & Refresh to save.', 'success');
         }
 
-        async function saveQuickEdit() {
+        function saveQuickEdit() {
             if (!editingProductId) return;
             const newQuantity = parseInt(document.getElementById('edit-quantity-input').value);
             if (isNaN(newQuantity) || newQuantity < 0) return showNotification('Invalid quantity.', 'error');
@@ -369,16 +456,162 @@
                 product.quantity = newQuantity;
                 refreshAllUI();
                 closeQuickEditModal();
-                showNotification(`${product.name} stock updated. Saving...`);
-                await saveDataToSheets();
+                showNotification(`${product.name} stock updated locally. Press Sync & Refresh to save.`);
             }
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initTabs();
-            initScanner();
-            initSales();
+        
+        function showLoading(text) {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+        function updateSyncStatus(message, color) {
+            const statusInfo = document.getElementById('sync-status-info');
+            const statusBar = document.getElementById('sync-status-bar');
+            if(statusInfo) statusInfo.textContent = message;
             
+            const colorMap = {
+                green: ['bg-green-50', 'border-green-200'],
+                red: ['bg-red-50', 'border-red-200'],
+                yellow: ['bg-yellow-50', 'border-yellow-200'],
+                default: ['bg-gray-50', 'border-gray-200'],
+            };
+            const [bg, border] = colorMap[color] || colorMap.default;
+            if(statusBar) statusBar.className = `mt-4 p-3 border rounded-lg ${bg} ${border}`;
+        }
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notification-text');
+            text.textContent = message;
+            notification.className = `fixed top-0 left-0 right-0 z-50`;
+            const innerDiv = notification.querySelector('.notification');
+            innerDiv.className = `notification p-4 text-center text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+            notification.classList.remove('hidden');
+            setTimeout(() => notification.classList.add('hidden'), 3000);
+        }
+        function initTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabName = btn.dataset.tab;
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    tabContents.forEach(content => {
+                        content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
+                        if (content.id === `${tabName}-tab` && tabName === 'reports') updateReports();
+                    });
+                });
+            });
+        }
+        function refreshAllUI() {
+            updateInventoryDisplay();
+            updateTodaysSales();
+            updateReports();
+            updateSaleStaging();
+            updateInventoryStaging();
+        }
+        function initScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            document.getElementById('scan-btn').addEventListener('click', () => { currentScanner = 'sales'; openScanner(); });
+            document.getElementById('inv-scan-btn').addEventListener('click', () => { currentScanner = 'inventory'; openScanner(); });
+            document.getElementById('close-scanner').addEventListener('click', closeScanner);
+        }
+        function openScanner() {
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+            document.getElementById('scanner-status').textContent = 'Starting camera...';
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    if (currentScanner === 'sales') document.getElementById('barcode-input').value = decodedText;
+                    else document.getElementById('inv-barcode').value = decodedText;
+                    closeScanner();
+                    if (navigator.vibrate) navigator.vibrate(100);
+                }, () => {}
+            ).catch(err => document.getElementById('scanner-status').textContent = 'Camera unavailable.');
+        }
+        function closeScanner() {
+            const modal = document.getElementById('scanner-modal');
+            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+        function initSales() {
+            document.getElementById('add-to-sale-btn').addEventListener('click', addToSaleStaging);
+            document.getElementById('barcode-input').addEventListener('keypress', (e) => e.key === 'Enter' && addToSaleStaging());
+            document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
+            document.getElementById('clear-sale-staging').addEventListener('click', clearSaleStaging);
+        }
+        function addToSaleStaging() {
+            const barcode = document.getElementById('barcode-input').value.trim();
+            const quantity = parseInt(document.getElementById('quantity-input').value);
+            if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
+            const product = products.find(p => String(p.code) === String(barcode));
+            if (!product) return showNotification('Product not found.', 'error');
+            const existing = saleStaging.find(item => item.productId === product.id);
+            if (existing) existing.quantity += quantity;
+            else saleStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity: quantity, maxQuantity: product.quantity });
+            updateSaleStaging();
+            showNotification(`Added ${product.name} to sale.`);
+            document.getElementById('barcode-input').value = '';
+            document.getElementById('quantity-input').value = '1';
+        }
+        function updateSaleStaging() {
+            const container = document.getElementById('sale-staging');
+            const confirmBtn = document.getElementById('confirm-sale-btn');
+            if (saleStaging.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Add items to complete sale</p>';
+                confirmBtn.disabled = true; return;
+            }
+            confirmBtn.disabled = false;
+            container.innerHTML = saleStaging.map((item, index) => {
+                const product = products.find(p => p.id === item.productId) || { quantity: 0 };
+                item.maxQuantity = product.quantity;
+                const isOverStock = item.quantity > item.maxQuantity;
+                return `
+                <div class="flex items-center justify-between p-3 rounded-lg ${isOverStock ? 'bg-red-100' : 'bg-gray-50'}">
+                    <div>
+                        <div class="font-medium">${item.productName} ${item.productVariant}</div>
+                        <div class="text-sm ${isOverStock ? 'text-red-600 font-semibold' : 'text-gray-500'}">Available: ${item.maxQuantity}</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="adjustSaleQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
+                        <span class="font-semibold w-8 text-center">${item.quantity}</span>
+                        <button onclick="adjustSaleQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
+                        <button onclick="removeSaleItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        window.adjustSaleQuantity = function(index, change) {
+            if (saleStaging[index]) {
+                const newQuantity = saleStaging[index].quantity + change;
+                if (newQuantity <= 0) removeSaleItem(index);
+                else {
+                    saleStaging[index].quantity = newQuantity;
+                }
+                updateSaleStaging();
+            }
+        };
+        window.removeSaleItem = function(index) { saleStaging.splice(index, 1); updateSaleStaging(); };
+        function clearSaleStaging() { saleStaging = []; updateSaleStaging(); }
+        function updateTodaysSales() {
+            const container = document.getElementById('today-sales');
+            const todaySales = sales.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString());
+            if (todaySales.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No sales recorded yet</p>';
+                return;
+            }
+            container.innerHTML = todaySales.slice(-10).reverse().map(sale => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div><div class="font-medium">${sale.productName}</div><div class="text-sm text-gray-500">${sale.productVariant}</div></div>
+                    <div class="text-right"><div class="font-semibold">${sale.quantity}</div><div class="text-xs text-gray-500">${new Date(sale.timestamp).toLocaleTimeString()}</div></div>
+                </div>`).join('');
+        }
+         function initInventory() {
             document.getElementById('add-to-inventory-staging-btn').addEventListener('click', addToInventoryStaging);
             document.getElementById('inv-barcode').addEventListener('keypress', (e) => e.key === 'Enter' && addToInventoryStaging());
             document.getElementById('confirm-inventory-btn').addEventListener('click', confirmInventoryUpdates);
@@ -390,278 +623,104 @@
             document.getElementById('confirm-reset').addEventListener('click', createNewSessionSheet);
             document.getElementById('cancel-edit').addEventListener('click', closeQuickEditModal);
             document.getElementById('save-edit').addEventListener('click', saveQuickEdit);
-            document.getElementById('refresh-ui-btn').addEventListener('click', refreshAllUI);
-            
-            loadDataFromSheets();
-        });
-        
-    function showLoading(text) {
-        document.getElementById('loading-text').textContent = text;
-        document.getElementById('loading-overlay').classList.remove('hidden');
-    }
-    function hideLoading() {
-        document.getElementById('loading-overlay').classList.add('hidden');
-    }
-    function updateSyncStatus(message, color) {
-        const statusInfo = document.getElementById('sync-status-info');
-        const statusBar = document.getElementById('sync-status-bar');
-        if(statusInfo) statusInfo.textContent = message;
-        
-        const colorMap = {
-            green: ['bg-green-50', 'border-green-200'],
-            red: ['bg-red-50', 'border-red-200'],
-            yellow: ['bg-yellow-50', 'border-yellow-200'],
-            default: ['bg-gray-50', 'border-gray-200'],
-        };
-        const [bg, border] = colorMap[color] || colorMap.default;
-        if(statusBar) statusBar.className = `mt-4 p-3 border rounded-lg ${bg} ${border}`;
-    }
-    function showNotification(message, type = 'success') {
-        const notification = document.getElementById('notification');
-        const text = document.getElementById('notification-text');
-        text.textContent = message;
-        notification.className = `fixed top-0 left-0 right-0 z-50`;
-        const innerDiv = notification.querySelector('.notification');
-        innerDiv.className = `notification p-4 text-center text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
-        notification.classList.remove('hidden');
-        setTimeout(() => notification.classList.add('hidden'), 3000);
-    }
-    function initTabs() {
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tabName = btn.dataset.tab;
-                tabBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                tabContents.forEach(content => {
-                    content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
-                    if (content.id === `${tabName}-tab` && tabName === 'reports') updateReports();
-                });
-            });
-        });
-    }
-    function refreshAllUI() {
-        console.log('Refreshing all UI components.');
-        updateInventoryDisplay();
-        updateTodaysSales();
-        updateReports();
-        document.getElementById('session-info').textContent = currentSheetName || 'N/A';
-        updateSaleStaging();
-        updateInventoryStaging();
-    }
-    function initScanner() {
-        html5QrCode = new Html5Qrcode("reader");
-        document.getElementById('scan-btn').addEventListener('click', () => { currentScanner = 'sales'; openScanner(); });
-        document.getElementById('inv-scan-btn').addEventListener('click', () => { currentScanner = 'inventory'; openScanner(); });
-        document.getElementById('close-scanner').addEventListener('click', closeScanner);
-    }
-    function openScanner() {
-        const modal = document.getElementById('scanner-modal');
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.remove('scale-95');
-        document.getElementById('scanner-status').textContent = 'Starting camera...';
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } },
-            (decodedText) => {
-                if (currentScanner === 'sales') document.getElementById('barcode-input').value = decodedText;
-                else document.getElementById('inv-barcode').value = decodedText;
-                closeScanner();
-                if (navigator.vibrate) navigator.vibrate(100);
-            }, () => {}
-        ).catch(err => document.getElementById('scanner-status').textContent = 'Camera unavailable.');
-    }
-    function closeScanner() {
-        const modal = document.getElementById('scanner-modal');
-        if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.add('scale-95');
-    }
-    function initSales() {
-        document.getElementById('add-to-sale-btn').addEventListener('click', addToSaleStaging);
-        document.getElementById('barcode-input').addEventListener('keypress', (e) => e.key === 'Enter' && addToSaleStaging());
-        document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
-        document.getElementById('clear-sale-staging').addEventListener('click', clearSaleStaging);
-    }
-    function addToSaleStaging() {
-        const barcode = document.getElementById('barcode-input').value.trim();
-        const quantity = parseInt(document.getElementById('quantity-input').value);
-        if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
-
-        console.log(`Searching for barcode: "${barcode}" (type: ${typeof barcode})`);
-        // FIX: Compare as strings to prevent type mismatch (e.g., number vs string)
-        const product = products.find(p => String(p.code) === String(barcode));
-        
-        if (!product) {
-            console.log('Product not found. Current product codes:', products.map(p => p.code));
-            return showNotification('Product not found.', 'error');
         }
-
-        const existing = saleStaging.find(item => item.productId === product.id);
-        if (existing) existing.quantity += quantity;
-        else saleStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity: quantity, maxQuantity: product.quantity });
-        updateSaleStaging();
-        showNotification(`Added ${product.name} to sale.`);
-        document.getElementById('barcode-input').value = '';
-        document.getElementById('quantity-input').value = '1';
-    }
-    function updateSaleStaging() {
-        const container = document.getElementById('sale-staging');
-        const confirmBtn = document.getElementById('confirm-sale-btn');
-        if (saleStaging.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center py-4">Add items to complete sale</p>';
-            confirmBtn.disabled = true; return;
-        }
-        confirmBtn.disabled = false;
-        container.innerHTML = saleStaging.map((item, index) => {
-            const product = products.find(p => p.id === item.productId) || { quantity: 0 };
-            item.maxQuantity = product.quantity;
-            const isOverStock = item.quantity > item.maxQuantity;
-            return `
-            <div class="flex items-center justify-between p-3 rounded-lg ${isOverStock ? 'bg-red-100' : 'bg-gray-50'}">
-                <div>
-                    <div class="font-medium">${item.productName} ${item.productVariant}</div>
-                    <div class="text-sm ${isOverStock ? 'text-red-600 font-semibold' : 'text-gray-500'}">Available: ${item.maxQuantity}</div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="adjustSaleQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
-                    <span class="font-semibold w-8 text-center">${item.quantity}</span>
-                    <button onclick="adjustSaleQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
-                    <button onclick="removeSaleItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
-                </div>
-            </div>`;
-        }).join('');
-    }
-    window.adjustSaleQuantity = function(index, change) {
-        if (saleStaging[index]) {
-            const newQuantity = saleStaging[index].quantity + change;
-            if (newQuantity <= 0) removeSaleItem(index);
-            else {
-                if(newQuantity > saleStaging[index].maxQuantity) showNotification('Quantity exceeds available stock.', 'error');
-                saleStaging[index].quantity = newQuantity;
-            }
-            updateSaleStaging();
-        }
-    };
-    window.removeSaleItem = function(index) { saleStaging.splice(index, 1); updateSaleStaging(); };
-    function clearSaleStaging() { saleStaging = []; updateSaleStaging(); }
-    function updateTodaysSales() {
-        const container = document.getElementById('today-sales');
-        const todaySales = sales.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString());
-        if (todaySales.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center py-4">No sales recorded yet</p>';
-            return;
-        }
-        container.innerHTML = todaySales.slice(-10).reverse().map(sale => `
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <div><div class="font-medium">${sale.productName}</div><div class="text-sm text-gray-500">${sale.productVariant}</div></div>
-                <div class="text-right"><div class="font-semibold">${sale.quantity}</div><div class="text-xs text-gray-500">${new Date(sale.timestamp).toLocaleTimeString()}</div></div>
-            </div>`).join('');
-    }
-    function addToInventoryStaging() {
-        const barcode = document.getElementById('inv-barcode').value.trim();
-        const quantity = parseInt(document.getElementById('inv-quantity').value);
-        if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
-        
-        console.log(`Searching for barcode: "${barcode}" (type: ${typeof barcode})`);
-        // FIX: Compare as strings to prevent type mismatch
-        const product = products.find(p => String(p.code) === String(barcode));
-
-        if (!product) {
-            console.log('Product not found. Current product codes:', products.map(p => p.code));
-            return showNotification('Product not found.', 'error');
-        }
-
-        const existing = inventoryStaging.find(item => item.productId === product.id);
-        if (existing) existing.quantity += quantity;
-        else inventoryStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity });
-        updateInventoryStaging();
-        showNotification(`Staged ${product.name} for inventory update.`);
-        document.getElementById('inv-barcode').value = '';
-        document.getElementById('inv-quantity').value = '1';
-    }
-    function updateInventoryStaging() {
-        const container = document.getElementById('inventory-staging');
-        const confirmBtn = document.getElementById('confirm-inventory-btn');
-        if (inventoryStaging.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center py-4">Add products to update inventory</p>';
-            confirmBtn.disabled = true; return;
-        }
-        confirmBtn.disabled = false;
-        container.innerHTML = inventoryStaging.map((item, index) => `
-            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div><div class="font-medium">${item.productName}</div><div class="text-sm text-gray-500">${item.productVariant}</div></div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="adjustInventoryQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
-                    <span class="font-semibold w-12 text-center">+${item.quantity}</span>
-                    <button onclick="adjustInventoryQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
-                    <button onclick="removeInventoryItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
-                </div>
-            </div>`).join('');
-    }
-    window.adjustInventoryQuantity = function(index, change) {
-        if (inventoryStaging[index]) {
-            const newQuantity = inventoryStaging[index].quantity + change;
-            if (newQuantity <= 0) removeInventoryItem(index);
-            else inventoryStaging[index].quantity = newQuantity;
+        function addToInventoryStaging() {
+            const barcode = document.getElementById('inv-barcode').value.trim();
+            const quantity = parseInt(document.getElementById('inv-quantity').value);
+            if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
+            const product = products.find(p => String(p.code) === String(barcode));
+            if (!product) return showNotification('Product not found.', 'error');
+            const existing = inventoryStaging.find(item => item.productId === product.id);
+            if (existing) existing.quantity += quantity;
+            else inventoryStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity });
             updateInventoryStaging();
+            showNotification(`Staged ${product.name} for inventory update.`);
+            document.getElementById('inv-barcode').value = '';
+            document.getElementById('inv-quantity').value = '1';
         }
-    };
-    window.removeInventoryItem = function(index) { inventoryStaging.splice(index, 1); updateInventoryStaging(); };
-    function clearInventoryStaging() { inventoryStaging = []; updateInventoryStaging(); }
-    function updateInventoryDisplay() {
-        const tbody = document.getElementById('inventory-list');
-        if (!tbody) return;
-        tbody.innerHTML = products.map(product => {
-            const soldToday = sales.filter(s => s.productId === product.id && new Date(s.timestamp).toDateString() === new Date().toDateString()).reduce((sum, s) => sum + s.quantity, 0);
-            return `
-                <tr class="${product.quantity <= 5 ? 'bg-red-50' : ''} border-b">
-                    <td class="px-4 py-3"><div class="font-medium">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div></td>
-                    <td class="px-4 py-3 font-mono text-sm">${product.code}</td>
-                    <td class="px-4 py-3 text-right font-semibold ${product.quantity <= 5 ? 'text-red-600' : ''}">${product.quantity}</td>
-                    <td class="px-4 py-3 text-right text-blue-600 font-medium">${soldToday}</td>
-                    <td class="px-4 py-3 text-center"><button onclick="openQuickEdit('${product.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">✏️ Edit</button></td>
-                </tr>`;
-        }).join('');
-    }
-    window.openQuickEdit = function(productId) {
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
-        editingProductId = productId;
-        document.getElementById('edit-product-info').innerHTML = `<div class="font-medium text-lg">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div>`;
-        document.getElementById('edit-quantity-input').value = product.quantity;
-        document.getElementById('quick-edit-modal').classList.remove('opacity-0', 'pointer-events-none');
-        setTimeout(() => document.getElementById('edit-quantity-input').focus(), 50);
-    };
-    function closeQuickEditModal() {
-        document.getElementById('quick-edit-modal').classList.add('opacity-0', 'pointer-events-none');
-        editingProductId = null;
-    }
-    function updateReports() {
-        const totalSales = sales.reduce((sum, s) => sum + s.quantity, 0);
-        const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
-        const lowStock = products.filter(p => p.quantity > 0 && p.quantity <= 5).length;
-        document.getElementById('total-sales').textContent = totalSales;
-        document.getElementById('total-products').textContent = totalProducts;
-        document.getElementById('low-stock').textContent = lowStock;
-        updateSalesReport();
-    }
-    function updateSalesReport() {
-        const container = document.getElementById('sales-report');
-        if (sales.length === 0) return container.innerHTML = '<p class="text-gray-500 text-center py-8">No sales data available</p>';
-        const sortedSales = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        container.innerHTML = `
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left">Date/Time</th><th class="px-4 py-3 text-left">Product</th><th class="px-4 py-3 text-right">Quantity</th></tr></thead>
-                <tbody>
-                    ${sortedSales.slice(0, 100).map(sale => `
-                        <tr class="border-b">
-                            <td class="px-4 py-3 text-gray-600">${new Date(sale.timestamp).toLocaleString()}</td>
-                            <td class="px-4 py-3"><div class="font-medium">${sale.productName}</div><div class="text-xs text-gray-500">${sale.productVariant}</div></td>
-                            <td class="px-4 py-3 text-right font-semibold">${sale.quantity}</td>
-                        </tr>`).join('')}
-                </tbody>
-            </table>`;
-    }
+        function updateInventoryStaging() {
+            const container = document.getElementById('inventory-staging');
+            const confirmBtn = document.getElementById('confirm-inventory-btn');
+            if (inventoryStaging.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Add products to update inventory</p>';
+                confirmBtn.disabled = true; return;
+            }
+            confirmBtn.disabled = false;
+            container.innerHTML = inventoryStaging.map((item, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div><div class="font-medium">${item.productName}</div><div class="text-sm text-gray-500">${item.productVariant}</div></div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="adjustInventoryQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
+                        <span class="font-semibold w-12 text-center">+${item.quantity}</span>
+                        <button onclick="adjustInventoryQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
+                        <button onclick="removeInventoryItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
+                    </div>
+                </div>`).join('');
+        }
+        window.adjustInventoryQuantity = function(index, change) {
+            if (inventoryStaging[index]) {
+                const newQuantity = inventoryStaging[index].quantity + change;
+                if (newQuantity <= 0) removeInventoryItem(index);
+                else inventoryStaging[index].quantity = newQuantity;
+                updateInventoryStaging();
+            }
+        };
+        window.removeInventoryItem = function(index) { inventoryStaging.splice(index, 1); updateInventoryStaging(); };
+        function clearInventoryStaging() { inventoryStaging = []; updateInventoryStaging(); }
+        function updateInventoryDisplay() {
+            const tbody = document.getElementById('inventory-list');
+            if (!tbody) return;
+            tbody.innerHTML = products.map(product => {
+                const soldToday = sales.filter(s => s.productId === product.id && new Date(s.timestamp).toDateString() === new Date().toDateString()).reduce((sum, s) => sum + s.quantity, 0);
+                return `
+                    <tr class="${product.quantity <= 5 ? 'bg-red-50' : ''} border-b">
+                        <td class="px-4 py-3"><div class="font-medium">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div></td>
+                        <td class="px-4 py-3 font-mono text-sm">${product.code}</td>
+                        <td class="px-4 py-3 text-right font-semibold ${product.quantity <= 5 ? 'text-red-600' : ''}">${product.quantity}</td>
+                        <td class="px-4 py-3 text-right text-blue-600 font-medium">${soldToday}</td>
+                        <td class="px-4 py-3 text-center"><button onclick="openQuickEdit('${product.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">✏️ Edit</button></td>
+                    </tr>`;
+            }).join('');
+        }
+        window.openQuickEdit = function(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            editingProductId = productId;
+            document.getElementById('edit-product-info').innerHTML = `<div class="font-medium text-lg">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div>`;
+            document.getElementById('edit-quantity-input').value = product.quantity;
+            document.getElementById('quick-edit-modal').classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => document.getElementById('edit-quantity-input').focus(), 50);
+        };
+        function closeQuickEditModal() {
+            document.getElementById('quick-edit-modal').classList.add('opacity-0', 'pointer-events-none');
+            editingProductId = null;
+        }
+        function updateReports() {
+            const totalSales = sales.reduce((sum, s) => sum + s.quantity, 0);
+            const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
+            const lowStock = products.filter(p => p.quantity > 0 && p.quantity <= 5).length;
+            document.getElementById('total-sales').textContent = totalSales;
+            document.getElementById('total-products').textContent = totalProducts;
+            document.getElementById('low-stock').textContent = lowStock;
+            updateSalesReport();
+        }
+        function updateSalesReport() {
+            const container = document.getElementById('sales-report');
+            if (sales.length === 0) return container.innerHTML = '<p class="text-gray-500 text-center py-8">No sales data available</p>';
+            const sortedSales = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            container.innerHTML = `
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left">Date/Time</th><th class="px-4 py-3 text-left">Product</th><th class="px-4 py-3 text-right">Quantity</th></tr></thead>
+                    <tbody>
+                        ${sortedSales.slice(0, 100).map(sale => `
+                            <tr class="border-b">
+                                <td class="px-4 py-3 text-gray-600">${new Date(sale.timestamp).toLocaleString()}</td>
+                                <td class="px-4 py-3"><div class="font-medium">${sale.productName}</div><div class="text-xs text-gray-500">${sale.productVariant}</div></td>
+                                <td class="px-4 py-3 text-right font-semibold">${sale.quantity}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
     </script>
 </body>
 </html>
