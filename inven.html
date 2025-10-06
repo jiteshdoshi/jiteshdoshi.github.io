@@ -11,26 +11,27 @@
     <!-- Firebase SDK -->
     <script type="module">
         console.log('Loading Firebase SDK...');
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         
-        console.log('Firebase imports loaded successfully');
-        
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCe6xHdmOsvS0Sd9-g4LfeTtzTagXIbocU",
-            authDomain: "ths-imanage.firebaseapp.com",
-            databaseURL: "https://ths-imanage-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "ths-imanage",
-            storageBucket: "ths-imanage.firebasestorage.app",
-            messagingSenderId: "419761456395",
-            appId: "1:419761456395:web:df1dd3348cf43e84a88e0e",
-            measurementId: "G-2FCPZ9NLP5"
-        };
-
-        console.log('Firebase config:', firebaseConfig);
-
         try {
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+            const { getDatabase, ref, set, get, onValue, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+            
+            console.log('Firebase imports loaded successfully');
+            
+            // Your web app's Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyCe6xHdmOsvS0Sd9-g4LfeTtzTagXIbocU",
+                authDomain: "ths-imanage.firebaseapp.com",
+                databaseURL: "https://ths-imanage-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "ths-imanage",
+                storageBucket: "ths-imanage.firebasestorage.app",
+                messagingSenderId: "419761456395",
+                appId: "1:419761456395:web:df1dd3348cf43e84a88e0e",
+                measurementId: "G-2FCPZ9NLP5"
+            };
+
+            console.log('Firebase config:', firebaseConfig);
+
             // Initialize Firebase
             console.log('Initializing Firebase app...');
             const app = initializeApp(firebaseConfig);
@@ -39,6 +40,21 @@
             console.log('Getting database instance...');
             const database = getDatabase(app);
             console.log('Database instance created:', database);
+            
+            // Test Firebase connection immediately
+            console.log('Testing Firebase connection...');
+            try {
+                const testRef = ref(database, 'test/connection');
+                await set(testRef, { 
+                    test: true, 
+                    timestamp: new Date().toISOString(),
+                    message: 'Firebase connection test from main app'
+                });
+                console.log('Firebase connection test successful!');
+            } catch (testError) {
+                console.warn('Firebase connection test failed, but continuing with initialization:', testError.message);
+                // Don't fail initialization just because of test write failure
+            }
             
             // Make Firebase functions available globally
             window.firebaseDB = database;
@@ -50,9 +66,23 @@
             window.firebaseReady = true;
             
             console.log('Firebase setup complete - all functions available globally');
+            
+            // Update connection status in UI
+            setTimeout(() => {
+                updateConnectionStatus('Firebase connected successfully', 'green');
+            }, 100);
+            
         } catch (error) {
             console.error('Firebase initialization error:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
             window.firebaseError = error;
+            window.firebaseReady = false;
+            
+            // Update connection status in UI
+            setTimeout(() => {
+                updateConnectionStatus('Firebase connection failed: ' + error.message, 'red');
+            }, 100);
         }
     </script>
     <style>
@@ -1244,42 +1274,71 @@
         }
 
         function mergeSyncData(syncData) {
+            console.log('Starting merge of sync data:', syncData);
+            
+            // Validate sync data structure
+            if (!syncData || typeof syncData !== 'object') {
+                console.error('Invalid sync data structure:', syncData);
+                return;
+            }
+            
             const currentTime = new Date().toISOString();
             let hasChanges = false;
             
-            // Merge products (take the newer timestamp data)
-            syncData.products.forEach(syncProduct => {
-                const existingProduct = products.find(p => p.id === syncProduct.id);
-                if (existingProduct) {
-                    // Update if sync data is newer or quantities differ
-                    if (existingProduct.quantity !== syncProduct.quantity) {
-                        existingProduct.quantity = syncProduct.quantity;
-                        hasChanges = true;
+            // Merge products (with validation)
+            if (Array.isArray(syncData.products)) {
+                console.log('Merging', syncData.products.length, 'products from sync data');
+                syncData.products.forEach(syncProduct => {
+                    if (syncProduct && syncProduct.id) {
+                        const existingProduct = products.find(p => p.id === syncProduct.id);
+                        if (existingProduct) {
+                            // Update if sync data is newer or quantities differ
+                            if (existingProduct.quantity !== syncProduct.quantity) {
+                                console.log(`Updating product ${syncProduct.id} quantity from ${existingProduct.quantity} to ${syncProduct.quantity}`);
+                                existingProduct.quantity = syncProduct.quantity;
+                                hasChanges = true;
+                            }
+                        } else {
+                            // Add new product
+                            console.log('Adding new product:', syncProduct.id);
+                            products.push(syncProduct);
+                            hasChanges = true;
+                        }
+                    } else {
+                        console.warn('Invalid product in sync data:', syncProduct);
                     }
-                } else {
-                    // Add new product
-                    products.push(syncProduct);
-                    hasChanges = true;
-                }
-            });
+                });
+            } else {
+                console.log('No products array in sync data or products is not an array');
+            }
             
-            // Merge sales (avoid duplicates by checking ID and timestamp)
-            syncData.sales.forEach(syncSale => {
-                const exists = sales.some(s => 
-                    s.id === syncSale.id || 
-                    (s.productId === syncSale.productId && 
-                     s.timestamp === syncSale.timestamp &&
-                     s.quantity === syncSale.quantity)
-                );
+            // Merge sales (with validation)
+            if (Array.isArray(syncData.sales)) {
+                console.log('Merging', syncData.sales.length, 'sales from sync data');
+                syncData.sales.forEach(syncSale => {
+                    if (syncSale && (syncSale.id || (syncSale.productId && syncSale.timestamp))) {
+                        const exists = sales.some(s => 
+                            s.id === syncSale.id || 
+                            (s.productId === syncSale.productId && 
+                             s.timestamp === syncSale.timestamp &&
+                             s.quantity === syncSale.quantity)
+                        );
+                        
+                        if (!exists) {
+                            console.log('Adding new sale:', syncSale.id || 'no-id');
+                            sales.push(syncSale);
+                            hasChanges = true;
+                        }
+                    } else {
+                        console.warn('Invalid sale in sync data:', syncSale);
+                    }
+                });
                 
-                if (!exists) {
-                    sales.push(syncSale);
-                    hasChanges = true;
-                }
-            });
-            
-            // Sort sales by timestamp
-            sales.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                // Sort sales by timestamp
+                sales.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            } else {
+                console.log('No sales array in sync data or sales is not an array');
+            }
             
             // Update last sync time and save only if there were changes
             if (hasChanges) {
@@ -1294,45 +1353,46 @@
                 updateDeviceInfo();
                 
                 console.log('Data merged and UI updated from remote sync');
+                showNotification('Data synchronized successfully');
+            } else {
+                console.log('No changes detected in sync data');
             }
         }
 
         // Firebase sync functions
-        function waitForFirebase() {
-            return new Promise((resolve, reject) => {
-                console.log('Waiting for Firebase to be ready...');
-                if (window.firebaseReady) {
-                    console.log('Firebase is ready!');
-                    resolve();
-                } else {
-                    console.log('Firebase not ready yet, waiting...');
-                    let attempts = 0;
-                    const checkFirebase = setInterval(() => {
-                        attempts++;
-                        console.log('Checking Firebase readiness, attempt:', attempts);
-                        if (window.firebaseReady) {
-                            console.log('Firebase is now ready!');
-                            clearInterval(checkFirebase);
-                            resolve();
-                        } else if (attempts > 50) { // 5 seconds timeout
-                            console.error('Firebase initialization timeout');
-                            clearInterval(checkFirebase);
-                            reject(new Error('Firebase initialization timeout'));
-                        }
-                    }, 100);
-                }
-            });
+        function ensureDataStructure() {
+            // Ensure we have valid arrays for products and sales
+            if (!Array.isArray(products)) {
+                console.log('Initializing products array');
+                products = [...initialProducts];
+            }
+            if (!Array.isArray(sales)) {
+                console.log('Initializing sales array');
+                sales = [];
+            }
         }
 
         async function syncToFirebase() {
             try {
                 console.log('Starting Firebase sync...');
-                await waitForFirebase();
+                
+                // Ensure we have valid data structure
+                ensureDataStructure();
+                
+                // Check if Firebase is ready
+                if (!window.firebaseReady) {
+                    throw new Error('Firebase not initialized. Check console for initialization errors.');
+                }
+                
+                if (window.firebaseError) {
+                    throw new Error('Firebase initialization failed: ' + window.firebaseError.message);
+                }
+                
                 console.log('Firebase ready, starting sync to session:', sessionId);
                 updateConnectionStatus('Syncing to Firebase...', 'yellow');
                 
                 const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
-                console.log('Created Firebase reference:', dataRef);
+                console.log('Created Firebase reference for path: sessions/' + sessionId);
                 
                 const syncData = {
                     products: products,
@@ -1342,77 +1402,148 @@
                     lastUpdated: window.serverTimestamp(),
                     timestamp: new Date().toISOString()
                 };
-                console.log('Syncing data:', syncData);
+                console.log('Syncing data to path sessions/' + sessionId + ':', syncData);
                 
                 await window.firebaseSet(dataRef, syncData);
                 console.log('Firebase sync successful!');
                 
                 updateConnectionStatus('Sync completed', 'green');
-                showNotification('Data synced to Firebase');
+                console.log('Firebase sync completed successfully');
             } catch (error) {
                 console.error('Firebase sync error:', error);
-                console.error('Error details:', error.code, error.message);
-                updateConnectionStatus('Firebase sync failed: ' + error.message, 'red');
-                showNotification('Sync failed: ' + error.message, 'error');
+                console.error('Error code:', error.code || 'No error code');
+                console.error('Error message:', error.message || 'No error message');
+                console.error('Full error object:', error);
+                
+                const errorMessage = error.code === 'PERMISSION_DENIED' 
+                    ? 'Permission denied - check Firebase database rules for sessions path'
+                    : error.message || 'Unknown error';
+                    
+                updateConnectionStatus('Firebase sync failed: ' + errorMessage, 'red');
+                showNotification('Sync failed: ' + errorMessage, 'error');
+                
+                // Additional debugging info
+                console.log('Firebase ready status:', window.firebaseReady);
+                console.log('Firebase error status:', window.firebaseError);
+                console.log('Session ID:', sessionId);
+                console.log('Device ID:', deviceId);
             }
         }
 
         async function syncFromFirebase() {
             try {
                 console.log('Starting Firebase read...');
-                await waitForFirebase();
+                
+                // Check if Firebase is ready
+                if (!window.firebaseReady) {
+                    throw new Error('Firebase not initialized. Check console for initialization errors.');
+                }
+                
+                if (window.firebaseError) {
+                    throw new Error('Firebase initialization failed: ' + window.firebaseError.message);
+                }
+                
                 console.log('Firebase ready, reading from session:', sessionId);
                 updateConnectionStatus('Getting data from Firebase...', 'yellow');
                 
                 const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
-                console.log('Reading from Firebase reference:', dataRef);
+                console.log('Reading from Firebase path: sessions/' + sessionId);
                 const snapshot = await window.firebaseGet(dataRef);
                 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     console.log('Received data from Firebase:', data);
-                    mergeSyncData(data);
-                    updateConnectionStatus('Sync completed', 'green');
-                    showNotification('Data synced from Firebase');
+                    
+                    // Validate that we have the expected data structure
+                    if (data && (data.products || data.sales)) {
+                        mergeSyncData(data);
+                        updateConnectionStatus('Sync completed', 'green');
+                        console.log('Firebase read completed successfully');
+                    } else {
+                        console.log('Firebase data exists but has unexpected structure:', data);
+                        updateConnectionStatus('Unexpected data structure in Firebase', 'warning');
+                        // Still try to sync our data to Firebase to establish proper structure
+                        await syncToFirebase();
+                    }
                 } else {
-                    console.log('No existing data found, creating new session');
+                    console.log('No existing data found for session:', sessionId);
                     updateConnectionStatus('Creating new session...', 'yellow');
                     // First time for this session, sync our data
                     await syncToFirebase();
                 }
             } catch (error) {
                 console.error('Firebase read error:', error);
-                console.error('Error details:', error.code, error.message);
-                updateConnectionStatus('Firebase sync failed: ' + error.message, 'red');
-                showNotification('Sync failed: ' + error.message, 'error');
+                console.error('Error code:', error.code || 'No error code');
+                console.error('Error message:', error.message || 'No error message');
+                console.error('Full error object:', error);
+                
+                const errorMessage = error.code === 'PERMISSION_DENIED' 
+                    ? 'Permission denied - check Firebase database rules for sessions path'
+                    : error.message || 'Unknown error';
+                    
+                updateConnectionStatus('Firebase sync failed: ' + errorMessage, 'red');
+                showNotification('Sync failed: ' + errorMessage, 'error');
+                
+                // Additional debugging info
+                console.log('Firebase ready status:', window.firebaseReady);
+                console.log('Firebase error status:', window.firebaseError);
+                console.log('Session ID:', sessionId);
+                console.log('Device ID:', deviceId);
             }
         }
 
         async function setupRealTimeSync() {
             try {
-                await waitForFirebase();
+                // Check if Firebase is ready
+                if (!window.firebaseReady) {
+                    throw new Error('Firebase not initialized. Check console for initialization errors.');
+                }
+                
+                if (window.firebaseError) {
+                    throw new Error('Firebase initialization failed: ' + window.firebaseError.message);
+                }
                 
                 const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
+                console.log('Setting up real-time listener for path: sessions/' + sessionId);
+                
                 window.firebaseOnValue(dataRef, (snapshot) => {
                     if (snapshot.exists()) {
                         const data = snapshot.val();
-                        // Only sync if it's from another device and newer than our last sync
-                        if (data.deviceId !== deviceId) {
-                            console.log('Received real-time update from device:', data.deviceId);
-                            mergeSyncData(data);
-                            showNotification(`Data synced from device: ${data.deviceId.substring(0, 8)}...`);
+                        console.log('Real-time update received from Firebase');
+                        
+                        // Validate data structure and device ID
+                        if (data && data.deviceId && (data.products || data.sales)) {
+                            // Only sync if it's from another device and newer than our last sync
+                            if (data.deviceId !== deviceId) {
+                                console.log('Received real-time update from device:', data.deviceId);
+                                mergeSyncData(data);
+                                showNotification(`Data synced from device: ${data.deviceId.substring(0, 8)}...`);
+                            } else {
+                                console.log('Ignoring update from same device');
+                            }
+                        } else {
+                            console.log('Real-time update has unexpected structure:', data);
                         }
                     }
                 }, (error) => {
                     console.error('Real-time sync listener error:', error);
-                    updateConnectionStatus('Real-time sync failed', 'red');
+                    console.error('Error code:', error.code || 'No error code');
+                    console.error('Error message:', error.message || 'No error message');
+                    
+                    const errorMessage = error.code === 'PERMISSION_DENIED' 
+                        ? 'Permission denied - check Firebase database rules for sessions path'
+                        : error.message || 'Unknown error';
+                        
+                    updateConnectionStatus('Real-time sync failed: ' + errorMessage, 'red');
                 });
                 
                 updateConnectionStatus('Real-time sync active', 'green');
                 console.log('Real-time sync listener established for session:', sessionId);
             } catch (error) {
                 console.error('Real-time sync setup failed:', error);
-                updateConnectionStatus('Real-time sync failed', 'red');
+                console.error('Error code:', error.code || 'No error code');
+                console.error('Error message:', error.message || 'No error message');
+                updateConnectionStatus('Real-time sync setup failed: ' + (error.message || 'Unknown error'), 'red');
             }
         }
 
@@ -1440,6 +1571,9 @@
                 } else if (color === 'yellow') {
                     statusDiv.classList.add('bg-yellow-50', 'border-yellow-200');
                     infoDiv.className = 'text-xs text-yellow-700';
+                } else if (color === 'warning') {
+                    statusDiv.classList.add('bg-orange-50', 'border-orange-200');
+                    infoDiv.className = 'text-xs text-orange-700';
                 } else {
                     statusDiv.classList.add('bg-gray-50', 'border-gray-200');
                     infoDiv.className = 'text-xs text-gray-700';
