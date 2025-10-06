@@ -7,22 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    
-    <!-- Supabase SDK -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script>
-        // Initialize Supabase
-        const SUPABASE_URL = 'https://zsprjvazqisxslnvnjai.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzcHJqdmF6cWlzeHNsbnZuamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NzQyOTAsImV4cCI6MjA3NTM1MDI5MH0.jHbDSyyCLt3h5yCVH2yc1fum6OEb0Apvfh9Km5Pw-9E';
-        
-        console.log('Initializing Supabase...');
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('Supabase initialized successfully');
-        
-        // Make Supabase available globally
-        window.supabaseClient = supabase;
-        window.supabaseReady = true;
-    </script>
     <style>
         body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
         .tab-btn.active { background-color: #3b82f6; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
@@ -44,9 +28,25 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75">
+        <div class="flex flex-col items-center">
+            <div class="loader"></div>
+            <p id="loading-text" class="mt-4 text-gray-600">Loading data from Google Sheets...</p>
+        </div>
+    </div>
+
     <!-- Notification Area -->
     <div id="notification" class="fixed top-0 left-0 right-0 z-50 hidden">
         <div class="notification bg-green-500 text-white p-4 text-center">
@@ -65,8 +65,8 @@
                 </div>
             </div>
             <div class="text-xs text-blue-100 text-center">
-                📦 Offline Ready<br>
-                <span id="sync-status" class="text-xs">Ready to sync</span>
+                <img src="https://ssl.gstatic.com/docs/doclist/images/mediatype/icon_1_spreadsheet_x16.png" class="inline-block h-4 w-4" alt="Google Sheets icon"/> Synced with Google Sheets<br>
+                <span id="sync-status" class="text-xs">Ready</span>
             </div>
         </header>
 
@@ -81,7 +81,7 @@
         <main class="flex-1 overflow-y-auto p-4">
             <!-- Sales Tab -->
             <div id="sales-tab" class="tab-content">
-                <div class="max-w-md mx-auto space-y-6">
+                 <div class="max-w-md mx-auto space-y-6">
                     <div class="card p-6">
                         <h2 class="text-lg font-semibold mb-4 text-center">📱 Record Sale</h2>
                         <div class="space-y-4">
@@ -110,7 +110,7 @@
             </div>
             <!-- Inventory Tab -->
             <div id="inventory-tab" class="tab-content hidden">
-                <div class="max-w-4xl mx-auto space-y-6">
+                 <div class="max-w-4xl mx-auto space-y-6">
                     <div class="card p-6">
                         <h2 class="text-lg font-semibold mb-4">📦 Add/Update Inventory</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,12 +134,7 @@
                     <div class="card p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold">Current Inventory</h3>
-                            <div class="flex gap-2">
-                                <button id="sync-btn" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm flex items-center gap-2">
-                                    <span id="sync-icon">🔄</span> Sync
-                                </button>
-                                <button id="reset-btn" class="btn-danger text-white py-2 px-4 rounded-lg text-sm">🔄 Reset Session</button>
-                            </div>
+                            <button id="reset-btn" class="btn-danger text-white py-2 px-4 rounded-lg text-sm">🔄 Create New Session Sheet</button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
@@ -151,18 +146,16 @@
                                 <tbody id="inventory-list"></tbody>
                             </table>
                         </div>
-                        
-                        <!-- Sync Status -->
                         <div id="sync-status-bar" class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                            <div class="text-sm font-medium text-gray-700">📡 Sync Status</div>
-                            <div class="text-xs text-gray-500" id="sync-status-info">Ready to sync with Supabase</div>
+                            <div class="text-sm font-medium text-gray-700">📡 Google Sheets Status</div>
+                            <div class="text-xs text-gray-500" id="sync-status-info">Ready</div>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Reports Tab -->
             <div id="reports-tab" class="tab-content hidden">
-                <div class="max-w-4xl mx-auto space-y-6">
+                 <div class="max-w-4xl mx-auto space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="card p-6 text-center"><div class="text-2xl mb-2">💰</div><div class="text-2xl font-bold text-blue-600" id="total-sales">0</div><div class="text-sm text-gray-600">Total Items Sold</div></div>
                         <div class="card p-6 text-center"><div class="text-2xl mb-2">📦</div><div class="text-2xl font-bold text-green-600" id="total-products">0</div><div class="text-sm text-gray-600">Products in Stock</div></div>
@@ -174,47 +167,37 @@
                     </div>
                     <div class="card p-6">
                         <h3 class="text-lg font-semibold mb-4">💾 Session Management</h3>
-                        <div class="mb-4 p-3 bg-gray-50 rounded-lg"><div class="text-sm font-medium text-gray-700">Device Info</div><div class="text-xs text-gray-500" id="device-info">Loading...</div></div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <button id="manual-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">🔄 Sync Data</button>
-                            <button id="refresh-ui-btn" class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg text-sm">🔄 Refresh UI</button>
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium text-gray-700">Current Session Sheet</div>
+                            <div class="text-xs text-gray-500" id="session-info">Loading...</div>
                         </div>
-                        <div id="connection-status" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg"><div class="text-sm font-medium text-blue-800">☁️ Supabase Sync</div><div class="text-xs text-blue-700" id="connection-info">Manual sync enabled - use sync buttons to save to cloud</div></div>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <button id="export-btn" class="btn-primary text-white py-3 px-6 rounded-lg">📤 Export Backup</button>
-                            <button id="import-btn" class="btn-primary text-white py-3 px-6 rounded-lg">📥 Import Backup</button>
-                            <input type="file" id="import-file" class="hidden" accept=".json">
-                        </div>
+                         <button id="refresh-ui-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg text-sm">🔄 Force Refresh UI</button>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Scanner Modal -->
+    <!-- Modals -->
     <div id="scanner-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
         <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-md transform scale-95">
             <h2 class="text-lg font-bold text-center mb-4">📷 Scan Barcode</h2>
-            <div id="reader"></div>
-            <div id="scanner-status" class="text-center text-sm text-gray-600 mt-3"></div>
+            <div id="reader"></div><div id="scanner-status" class="text-center text-sm text-gray-600 mt-3"></div>
             <button id="close-scanner" class="w-full mt-4 bg-red-500 text-white py-3 rounded-lg">❌ Cancel</button>
         </div>
     </div>
-    <!-- Reset Confirmation Modal -->
     <div id="reset-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
         <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-sm transform scale-95">
-            <h2 class="text-lg font-bold text-center mb-4">🔄 Reset Session</h2>
-            <p class="text-gray-600 mb-6 text-center">This will reset all inventory and sales for this session. Continue?</p>
-            <div class="flex gap-3"><button id="cancel-reset" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">Cancel</button><button id="confirm-reset" class="flex-1 bg-red-500 text-white py-3 rounded-lg">Reset</button></div>
+            <h2 class="text-lg font-bold text-center mb-4">🔄 Create New Session Sheet</h2>
+            <p class="text-gray-600 mb-6 text-center">This will create a new sheet for a new session. All current data will be saved. Continue?</p>
+            <div class="flex gap-3"><button id="cancel-reset" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">Cancel</button><button id="confirm-reset" class="flex-1 bg-red-500 text-white py-3 rounded-lg">Create New</button></div>
         </div>
     </div>
-    <!-- Quick Edit Modal -->
     <div id="quick-edit-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
         <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-sm transform scale-95">
             <h2 class="text-lg font-bold text-center mb-4">✏️ Quick Edit Stock</h2>
             <div class="mb-4">
-                <div id="edit-product-info" class="text-center mb-4"></div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">New Quantity</label>
+                <div id="edit-product-info" class="text-center mb-4"></div><label class="block text-sm font-medium text-gray-700 mb-2">New Quantity</label>
                 <input type="number" id="edit-quantity-input" min="0" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg">
             </div>
             <div class="flex gap-3"><button id="cancel-edit" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">Cancel</button><button id="save-edit" class="flex-1 bg-blue-600 text-white py-3 rounded-lg">Save</button></div>
@@ -222,34 +205,20 @@
     </div>
 
     <script>
-        // Initial product data (used as a fallback)
+        // --- IMPORTANT SETUP ---
+        // 1. Open your Google Sheet.
+        // 2. Go to Extensions > Apps Script.
+        // 3. Copy the code from `google-apps-script.js` into the script editor and save.
+        // 4. Click "Deploy" > "New deployment".
+        // 5. Select "Web app" as the type.
+        // 6. Under "Who has access", select "Anyone with Google account" or "Anyone".
+        // 7. Click "Deploy". Authorize the script when prompted.
+        // 8. Copy the "Web app URL" and paste it below.
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNVtUgUtvKqFC8rdWsk12FwlbCJUn0OCcoVPw2td-7ZKaGHzfb2sM9wfrC4gt9N7Y/exec';
+
+        // Initial product data (used for creating new sessions)
         const initialProducts = [
-            { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 },
-            { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 },
-            { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 },
-            { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 },
-            { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 },
-            { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 },
-            { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 },
-            { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 },
-            { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 },
-            { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 },
-            { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 },
-            { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 },
-            { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 },
-            { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 },
-            { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 },
-            { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 },
-            { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 },
-            { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 },
-            { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 },
-            { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 },
-            { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 },
-            { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 },
-            { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 },
-            { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 },
-            { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 },
-            { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 }
+            { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 }, { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 }, { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 }, { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 }, { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 }, { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 }, { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 }, { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 }, { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 }, { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 }, { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 }, { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 }, { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 }, { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 }, { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 }, { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 }, { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 }, { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 }, { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 }, { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 }, { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 }, { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 }, { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 }, { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 }, { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 }, { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 }
         ];
 
         // --- App State ---
@@ -260,188 +229,170 @@
         let saleStaging = [];
         let inventoryStaging = [];
         let editingProductId = null;
-        let deviceId = null;
-        let sessionId = null;
-        let lastSyncTime = null;
-
-        // --- Initialization ---
-        function initDeviceId() {
-            deviceId = localStorage.getItem('deviceId');
-            if (!deviceId) {
-                deviceId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('deviceId', deviceId);
-            }
-            sessionId = localStorage.getItem('sessionId');
-            if (!sessionId) {
-                sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('sessionId', sessionId);
-            }
-            lastSyncTime = localStorage.getItem('lastSyncTime');
-        }
-
-        function generateNewSession() {
-            sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('sessionId', sessionId);
-            updateDeviceInfo();
-            // Note: New session will be synced on next manual sync
-        }
-        
-        function loadData() {
-            const savedProducts = localStorage.getItem('inventory_products');
-            const savedSales = localStorage.getItem('inventory_sales');
-            products = savedProducts ? JSON.parse(savedProducts) : JSON.parse(JSON.stringify(initialProducts));
-            sales = savedSales ? JSON.parse(savedSales) : [];
-        }
-
-        function saveData() {
-            localStorage.setItem('inventory_products', JSON.stringify(products));
-            localStorage.setItem('inventory_sales', JSON.stringify(sales));
-            const now = new Date().toISOString();
-            localStorage.setItem('lastSyncTime', now);
-            lastSyncTime = now;
-        }
+        let currentSheetName = '';
 
         // --- UI & Notifications ---
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            const text = document.getElementById('notification-text');
-            text.textContent = message;
-            notification.className = `fixed top-0 left-0 right-0 z-50`;
-            const innerDiv = notification.querySelector('.notification');
-            innerDiv.className = `notification p-4 text-center text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
-            notification.classList.remove('hidden');
-            setTimeout(() => notification.classList.add('hidden'), 3000);
+        function showNotification(message, type = 'success') { /* Unchanged */ }
+        function initTabs() { /* Unchanged */ }
+        function refreshAllUI() { /* Unchanged */ }
+        function initScanner() { /* Unchanged */ }
+        function openScanner() { /* Unchanged */ }
+        function closeScanner() { /* Unchanged */ }
+        function initSales() { /* Unchanged */ }
+        function addToSaleStaging() { /* Unchanged */ }
+        function updateSaleStaging() { /* Unchanged */ }
+        window.adjustSaleQuantity = (index, change) => { /* Unchanged */ };
+        window.removeSaleItem = (index) => { /* Unchanged */ };
+        function clearSaleStaging() { /* Unchanged */ }
+        function updateTodaysSales() { /* Unchanged */ }
+        function initInventory() { /* Unchanged (Reset logic moved) */ }
+        function addToInventoryStaging() { /* Unchanged */ }
+        function updateInventoryStaging() { /* Unchanged */ }
+        window.adjustInventoryQuantity = (index, change) => { /* Unchanged */ };
+        window.removeInventoryItem = (index) => { /* Unchanged */ };
+        function clearInventoryStaging() { /* Unchanged */ }
+        function updateInventoryDisplay() { /* Unchanged */ }
+        window.openQuickEdit = (productId) => { /* Unchanged */ };
+        function closeQuickEditModal() { /* Unchanged */ }
+        function updateReports() { /* Unchanged */ }
+        function updateSalesReport() { /* Unchanged */ }
+        function showLoading(text) {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
         }
-
-        function initTabs() {
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const tabName = btn.dataset.tab;
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    tabContents.forEach(content => {
-                        content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
-                        if (content.id === `${tabName}-tab` && tabName === 'reports') updateReports();
-                    });
-                });
-            });
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+        function updateSyncStatus(message, color) {
+            const statusInfo = document.getElementById('sync-status-info');
+            const statusBar = document.getElementById('sync-status-bar');
+            if(statusInfo) statusInfo.textContent = message;
+            
+            const colorMap = {
+                green: ['bg-green-50', 'border-green-200'],
+                red: ['bg-red-50', 'border-red-200'],
+                yellow: ['bg-yellow-50', 'border-yellow-200'],
+                default: ['bg-gray-50', 'border-gray-200'],
+            };
+            const [bg, border] = colorMap[color] || colorMap.default;
+            if(statusBar) statusBar.className = `mt-4 p-3 border rounded-lg ${bg} ${border}`;
         }
         
-        function refreshAllUI() {
-            console.log('Refreshing all UI components.');
-            updateInventoryDisplay();
-            updateTodaysSales();
-            updateReports();
-            updateDeviceInfo();
-            updateSaleStaging();
-            updateInventoryStaging();
-        }
+        // --- Google Sheets API Functions ---
 
-        // --- Scanner ---
-        function initScanner() {
-            html5QrCode = new Html5Qrcode("reader");
-            document.getElementById('scan-btn').addEventListener('click', () => { currentScanner = 'sales'; openScanner(); });
-            document.getElementById('inv-scan-btn').addEventListener('click', () => { currentScanner = 'inventory'; openScanner(); });
-            document.getElementById('close-scanner').addEventListener('click', closeScanner);
-        }
-
-        function openScanner() {
-            const modal = document.getElementById('scanner-modal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.querySelector('.modal-content').classList.remove('scale-95');
-            document.getElementById('scanner-status').textContent = 'Starting camera...';
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    if (currentScanner === 'sales') document.getElementById('barcode-input').value = decodedText;
-                    else document.getElementById('inv-barcode').value = decodedText;
-                    closeScanner();
-                    if (navigator.vibrate) navigator.vibrate(100);
-                }, () => {}
-            ).catch(err => document.getElementById('scanner-status').textContent = 'Camera unavailable.');
-        }
-
-        function closeScanner() {
-            const modal = document.getElementById('scanner-modal');
-            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            modal.querySelector('.modal-content').classList.add('scale-95');
-        }
-
-        // --- Sales ---
-        function initSales() {
-            document.getElementById('add-to-sale-btn').addEventListener('click', addToSaleStaging);
-            document.getElementById('barcode-input').addEventListener('keypress', (e) => e.key === 'Enter' && addToSaleStaging());
-            document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
-            document.getElementById('clear-sale-staging').addEventListener('click', clearSaleStaging);
-        }
-
-        function addToSaleStaging() {
-            const barcode = document.getElementById('barcode-input').value.trim();
-            const quantity = parseInt(document.getElementById('quantity-input').value);
-            if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
-            const product = products.find(p => p.code === barcode);
-            if (!product) return showNotification('Product not found.', 'error');
-            
-            const existing = saleStaging.find(item => item.productId === product.id);
-            if (existing) existing.quantity += quantity;
-            else saleStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity: quantity, maxQuantity: product.quantity });
-            
-            updateSaleStaging();
-            showNotification(`Added ${product.name} to sale.`);
-            document.getElementById('barcode-input').value = '';
-            document.getElementById('quantity-input').value = '1';
-        }
-
-        function updateSaleStaging() {
-            const container = document.getElementById('sale-staging');
-            const confirmBtn = document.getElementById('confirm-sale-btn');
-            if (saleStaging.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">Add items to complete sale</p>';
-                confirmBtn.disabled = true;
+        async function loadDataFromSheets() {
+            if (GOOGLE_SCRIPT_URL.includes('PASTE_YOUR_URL')) {
+                alert('Please paste your Google Apps Script Web App URL into the GOOGLE_SCRIPT_URL variable in the script tag.');
+                hideLoading();
                 return;
             }
-            confirmBtn.disabled = false;
-            container.innerHTML = saleStaging.map((item, index) => {
-                const product = products.find(p => p.id === item.productId) || { quantity: 0 };
-                item.maxQuantity = product.quantity;
-                const isOverStock = item.quantity > item.maxQuantity;
-                return `
-                <div class="flex items-center justify-between p-3 rounded-lg ${isOverStock ? 'bg-red-100' : 'bg-gray-50'}">
-                    <div>
-                        <div class="font-medium">${item.productName} ${item.productVariant}</div>
-                        <div class="text-sm ${isOverStock ? 'text-red-600 font-semibold' : 'text-gray-500'}">Available: ${item.maxQuantity}</div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="adjustSaleQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
-                        <span class="font-semibold w-8 text-center">${item.quantity}</span>
-                        <button onclick="adjustSaleQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
-                        <button onclick="removeSaleItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
-                    </div>
-                </div>`;
-            }).join('');
+            showLoading('Fetching latest session from Google Sheets...');
+            updateSyncStatus('Loading...', 'yellow');
+            try {
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getLatestSheetData`, { method: 'GET' });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    products = data.products || JSON.parse(JSON.stringify(initialProducts));
+                    sales = data.sales || [];
+                    currentSheetName = data.sheetName;
+                    document.getElementById('session-info').textContent = currentSheetName;
+                    showNotification('Data loaded from ' + currentSheetName, 'success');
+                    updateSyncStatus('Loaded from ' + currentSheetName, 'green');
+                } else {
+                    throw new Error(data.message || 'Failed to parse data from sheet.');
+                }
+                refreshAllUI();
+            } catch (error) {
+                console.error('Error loading data from Google Sheets:', error);
+                let userMessage = error.message;
+                if (userMessage.includes('Range not found')) {
+                    userMessage = 'Could not read from sheet. If the sheet is new or empty, please ensure the latest version of the Google Apps Script is deployed.';
+                }
+                showNotification(`Error: ${userMessage}`, 'error');
+                updateSyncStatus(`Error: ${userMessage}`, 'red');
+                // Load initial products as a fallback
+                products = JSON.parse(JSON.stringify(initialProducts));
+                sales = [];
+                refreshAllUI();
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function saveDataToSheets() {
+            if (!currentSheetName) {
+                showNotification('No active session sheet. Cannot save.', 'error');
+                return;
+            }
+            updateSyncStatus(`Saving to ${currentSheetName}...`, 'yellow');
+            try {
+                const payload = {
+                    action: 'updateSheetData',
+                    sheetName: currentSheetName,
+                    products: products,
+                    sales: sales
+                };
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Required for Apps Script
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showNotification('Data saved to Google Sheets.', 'success');
+                    updateSyncStatus('Synced successfully.', 'green');
+                } else {
+                    throw new Error(result.message || 'Unknown error from Google Sheets.');
+                }
+            } catch (error) {
+                console.error('Error saving data to Google Sheets:', error);
+                showNotification(`Save failed: ${error.message}`, 'error');
+                updateSyncStatus(`Save failed: ${error.message}`, 'red');
+            }
         }
 
-        window.adjustSaleQuantity = (index, change) => {
-            if (saleStaging[index]) {
-                const newQuantity = saleStaging[index].quantity + change;
-                if (newQuantity <= 0) removeSaleItem(index);
-                else {
-                    if(newQuantity > saleStaging[index].maxQuantity) showNotification('Quantity exceeds available stock.', 'error');
-                    saleStaging[index].quantity = newQuantity;
+        async function createNewSessionSheet() {
+            document.getElementById('reset-modal').classList.add('opacity-0', 'pointer-events-none');
+            showLoading('Creating new session sheet...');
+            updateSyncStatus('Creating new session...', 'yellow');
+            try {
+                const payload = { action: 'createNewSession' };
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showNotification(`New session '${result.sheetName}' created.`, 'success');
+                    await loadDataFromSheets(); // Reload data from the new sheet
+                } else {
+                    throw new Error(result.message || 'Failed to create new session.');
                 }
-                updateSaleStaging();
+            } catch (error) {
+                 console.error('Error creating new session:', error);
+                showNotification(`Error: ${error.message}`, 'error');
+                updateSyncStatus(`Error: ${error.message}`, 'red');
+            } finally {
+                hideLoading();
             }
-        };
-        window.removeSaleItem = (index) => { saleStaging.splice(index, 1); updateSaleStaging(); };
-        function clearSaleStaging() { saleStaging = []; updateSaleStaging(); }
+        }
 
-        function confirmSale() {
+        // --- Modified Core Logic to Integrate Sheets ---
+
+        async function confirmSale() {
             if (saleStaging.length === 0) return;
             const errors = saleStaging.filter(item => item.quantity > item.maxQuantity);
             if (errors.length > 0) return showNotification(`Insufficient stock for ${errors[0].productName}.`, 'error');
-            
+
             saleStaging.forEach(item => {
                 const product = products.find(p => p.id === item.productId);
                 if (product) {
@@ -449,30 +400,46 @@
                     sales.push({ id: `sale-${Date.now()}-${Math.random()}`, productId: product.id, productName: product.name, productVariant: product.variant, quantity: item.quantity, timestamp: new Date().toISOString() });
                 }
             });
-            
-            saveData();
+
             refreshAllUI();
             clearSaleStaging();
-            // Note: Data saved locally. Use sync button to upload to cloud.
-            showNotification('Sale completed successfully!');
+            showNotification('Sale recorded. Saving to Google Sheet...', 'success');
+            await saveDataToSheets();
         }
 
-        function updateTodaysSales() {
-            const container = document.getElementById('today-sales');
-            const todaySales = sales.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString());
-            if (todaySales.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">No sales recorded yet</p>';
-                return;
+        async function confirmInventoryUpdates() {
+            if (inventoryStaging.length === 0) return;
+            inventoryStaging.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product) product.quantity += item.quantity;
+            });
+            refreshAllUI();
+            clearInventoryStaging();
+            showNotification('Inventory updated. Saving to Google Sheet...', 'success');
+            await saveDataToSheets();
+        }
+
+        async function saveQuickEdit() {
+            if (!editingProductId) return;
+            const newQuantity = parseInt(document.getElementById('edit-quantity-input').value);
+            if (isNaN(newQuantity) || newQuantity < 0) return showNotification('Invalid quantity.', 'error');
+            const product = products.find(p => p.id === editingProductId);
+            if (product) {
+                product.quantity = newQuantity;
+                refreshAllUI();
+                closeQuickEditModal();
+                showNotification(`${product.name} stock updated. Saving...`);
+                await saveDataToSheets();
             }
-            container.innerHTML = todaySales.slice(-10).reverse().map(sale => `
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div><div class="font-medium">${sale.productName}</div><div class="text-sm text-gray-500">${sale.productVariant}</div></div>
-                    <div class="text-right"><div class="font-semibold">${sale.quantity}</div><div class="text-xs text-gray-500">${new Date(sale.timestamp).toLocaleTimeString()}</div></div>
-                </div>`).join('');
         }
 
-        // --- Inventory ---
-        function initInventory() {
+        // --- App Startup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initTabs();
+            initScanner();
+            initSales();
+            
+            // --- MODIFIED INVENTORY INIT ---
             document.getElementById('add-to-inventory-staging-btn').addEventListener('click', addToInventoryStaging);
             document.getElementById('inv-barcode').addEventListener('keypress', (e) => e.key === 'Enter' && addToInventoryStaging());
             document.getElementById('confirm-inventory-btn').addEventListener('click', confirmInventoryUpdates);
@@ -481,420 +448,249 @@
                 document.getElementById('reset-modal').classList.remove('opacity-0', 'pointer-events-none');
             });
             document.getElementById('cancel-reset').addEventListener('click', () => document.getElementById('reset-modal').classList.add('opacity-0', 'pointer-events-none'));
-            document.getElementById('confirm-reset').addEventListener('click', resetInventory);
+            document.getElementById('confirm-reset').addEventListener('click', createNewSessionSheet);
             document.getElementById('cancel-edit').addEventListener('click', closeQuickEditModal);
             document.getElementById('save-edit').addEventListener('click', saveQuickEdit);
-        }
-        
-        function addToInventoryStaging() {
-            const barcode = document.getElementById('inv-barcode').value.trim();
-            const quantity = parseInt(document.getElementById('inv-quantity').value);
-            if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
-            const product = products.find(p => p.code === barcode);
-            if (!product) return showNotification('Product not found.', 'error');
-            
-            const existing = inventoryStaging.find(item => item.productId === product.id);
-            if (existing) existing.quantity += quantity;
-            else inventoryStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity });
-            
-            updateInventoryStaging();
-            showNotification(`Staged ${product.name} for inventory update.`);
-            document.getElementById('inv-barcode').value = '';
-            document.getElementById('inv-quantity').value = '1';
-        }
-
-        function updateInventoryStaging() {
-            const container = document.getElementById('inventory-staging');
-            const confirmBtn = document.getElementById('confirm-inventory-btn');
-            if (inventoryStaging.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">Add products to update inventory</p>';
-                confirmBtn.disabled = true;
-                return;
-            }
-            confirmBtn.disabled = false;
-            container.innerHTML = inventoryStaging.map((item, index) => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div><div class="font-medium">${item.productName}</div><div class="text-sm text-gray-500">${item.productVariant}</div></div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="adjustInventoryQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
-                        <span class="font-semibold w-12 text-center">+${item.quantity}</span>
-                        <button onclick="adjustInventoryQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
-                        <button onclick="removeInventoryItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
-                    </div>
-                </div>`).join('');
-        }
-        
-        window.adjustInventoryQuantity = (index, change) => {
-            if (inventoryStaging[index]) {
-                const newQuantity = inventoryStaging[index].quantity + change;
-                if (newQuantity <= 0) removeInventoryItem(index);
-                else inventoryStaging[index].quantity = newQuantity;
-                updateInventoryStaging();
-            }
-        };
-        window.removeInventoryItem = (index) => { inventoryStaging.splice(index, 1); updateInventoryStaging(); };
-        function clearInventoryStaging() { inventoryStaging = []; updateInventoryStaging(); }
-
-        function confirmInventoryUpdates() {
-            if (inventoryStaging.length === 0) return;
-            inventoryStaging.forEach(item => {
-                const product = products.find(p => p.id === item.productId);
-                if (product) product.quantity += item.quantity;
-            });
-            saveData();
-            refreshAllUI();
-            clearInventoryStaging();
-            // Note: Data saved locally. Use sync button to upload to cloud.
-            showNotification('Inventory updated successfully!');
-        }
-
-        function updateInventoryDisplay() {
-            const tbody = document.getElementById('inventory-list');
-            if (!tbody) return;
-            tbody.innerHTML = products.map(product => {
-                const soldToday = sales.filter(s => s.productId === product.id && new Date(s.timestamp).toDateString() === new Date().toDateString()).reduce((sum, s) => sum + s.quantity, 0);
-                return `
-                    <tr class="${product.quantity <= 5 ? 'bg-red-50' : ''} border-b">
-                        <td class="px-4 py-3"><div class="font-medium">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div></td>
-                        <td class="px-4 py-3 font-mono text-sm">${product.code}</td>
-                        <td class="px-4 py-3 text-right font-semibold ${product.quantity <= 5 ? 'text-red-600' : ''}">${product.quantity}</td>
-                        <td class="px-4 py-3 text-right text-blue-600 font-medium">${soldToday}</td>
-                        <td class="px-4 py-3 text-center"><button onclick="openQuickEdit('${product.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">✏️ Edit</button></td>
-                    </tr>`;
-            }).join('');
-        }
-
-        function resetInventory() {
-            products.forEach(p => p.quantity = 0);
-            sales = [];
-            saleStaging = [];
-            inventoryStaging = [];
-            saveData();
-            generateNewSession();
-            // Immediately create a new instance in Supabase for the new session
-            (async () => {
-                updateSyncStatus('Creating new session in cloud...', 'yellow');
-                const syncData = {
-                    session_id: sessionId,
-                    device_id: deviceId,
-                    products: products || [],
-                    sales: sales || [],
-                    last_updated: new Date().toISOString()
-                };
-                const { error } = await window.supabaseClient
-                    .from('inventory_sessions')
-                    .upsert([syncData], { onConflict: 'session_id' });
-                if (error) {
-                    updateSyncStatus('Failed to create session in cloud', 'red');
-                    showNotification('Cloud session creation failed: ' + error.message, 'error');
-                } else {
-                    updateSyncStatus('New session created in cloud', 'green');
-                    showNotification('New session started and synced to cloud.');
-                }
-                refreshAllUI();
-                document.getElementById('reset-modal').classList.add('opacity-0', 'pointer-events-none');
-            })();
-        }
-
-        window.openQuickEdit = (productId) => {
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
-            editingProductId = productId;
-            document.getElementById('edit-product-info').innerHTML = `<div class="font-medium text-lg">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div>`;
-            document.getElementById('edit-quantity-input').value = product.quantity;
-            document.getElementById('quick-edit-modal').classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => document.getElementById('edit-quantity-input').focus(), 50);
-        };
-
-        function closeQuickEditModal() {
-            document.getElementById('quick-edit-modal').classList.add('opacity-0', 'pointer-events-none');
-            editingProductId = null;
-        }
-
-        function saveQuickEdit() {
-            if (!editingProductId) return;
-            const newQuantity = parseInt(document.getElementById('edit-quantity-input').value);
-            if (isNaN(newQuantity) || newQuantity < 0) return showNotification('Invalid quantity.', 'error');
-            const product = products.find(p => p.id === editingProductId);
-            if (product) {
-                product.quantity = newQuantity;
-                saveData();
-                refreshAllUI();
-                closeQuickEditModal();
-                // Note: Data saved locally. Use sync button to upload to cloud.
-                showNotification(`${product.name} stock updated.`);
-            }
-        }
-
-        // --- Reports ---
-        function updateReports() {
-            const totalSales = sales.reduce((sum, s) => sum + s.quantity, 0);
-            const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
-            const lowStock = products.filter(p => p.quantity > 0 && p.quantity <= 5).length;
-            document.getElementById('total-sales').textContent = totalSales;
-            document.getElementById('total-products').textContent = totalProducts;
-            document.getElementById('low-stock').textContent = lowStock;
-            updateSalesReport();
-        }
-
-        function updateSalesReport() {
-            const container = document.getElementById('sales-report');
-            if (sales.length === 0) return container.innerHTML = '<p class="text-gray-500 text-center py-8">No sales data available</p>';
-            const sortedSales = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            container.innerHTML = `
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left">Date/Time</th><th class="px-4 py-3 text-left">Product</th><th class="px-4 py-3 text-right">Quantity</th></tr></thead>
-                    <tbody>
-                        ${sortedSales.slice(0, 100).map(sale => `
-                            <tr class="border-b">
-                                <td class="px-4 py-3 text-gray-600">${new Date(sale.timestamp).toLocaleString()}</td>
-                                <td class="px-4 py-3"><div class="font-medium">${sale.productName}</div><div class="text-xs text-gray-500">${sale.productVariant}</div></td>
-                                <td class="px-4 py-3 text-right font-semibold">${sale.quantity}</td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>`;
-        }
-
-        // --- Data Management & Supabase Sync ---
-        function initDataManagement() {
-            document.getElementById('export-btn').addEventListener('click', exportData);
-            document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
-            document.getElementById('import-file').addEventListener('change', importData);
-            document.getElementById('sync-btn').addEventListener('click', performManualSync);
-            document.getElementById('manual-sync-btn').addEventListener('click', performManualSync);
             document.getElementById('refresh-ui-btn').addEventListener('click', refreshAllUI);
-            updateDeviceInfo();
-        }
-        
-        function updateDeviceInfo() {
-            const el = document.getElementById('device-info');
-            if (el) el.innerHTML = `Session: ${sessionId ? sessionId.substring(8, 20) : 'N/A'}<br>Last Sync: ${lastSyncTime ? new Date(lastSyncTime).toLocaleString() : 'Never'}`;
-        }
-        
-        function exportData() {
-            const dataStr = JSON.stringify({ products, sales, deviceId, sessionId }, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `inventory-backup-${sessionId.substring(8,15)}-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-            showNotification('Backup exported successfully.');
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.products && data.sales && data.sessionId) {
-                        products = data.products;
-                        sales = data.sales;
-                        sessionId = data.sessionId;
-                        localStorage.setItem('sessionId', sessionId);
-                        saveData();
-                        refreshAllUI();
-                        showNotification('Backup imported successfully. Sync to apply changes to cloud.');
-                    } else {
-                        showNotification('Invalid backup file format.', 'error');
-                    }
-                } catch (err) {
-                    showNotification('Error reading backup file.', 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // --- Supabase Sync Logic ---
-        
-        function updateSyncStatus(message, color) {
-            const syncStatusInfo = document.getElementById('sync-status-info');
-            const syncStatus = document.getElementById('sync-status');
             
-            if (syncStatusInfo) {
-                syncStatusInfo.textContent = message;
-            }
-            if (syncStatus) {
-                syncStatus.textContent = message;
-            }
-            
-            // Update sync status bar color
-            const syncStatusBar = document.getElementById('sync-status-bar');
-            if (syncStatusBar) {
-                const colorMap = {
-                    green: ['bg-green-50', 'border-green-200'],
-                    red: ['bg-red-50', 'border-red-200'],
-                    yellow: ['bg-yellow-50', 'border-yellow-200'],
-                    default: ['bg-gray-50', 'border-gray-200'],
-                };
-                const [bg, border] = colorMap[color] || colorMap.default;
-                syncStatusBar.className = `mt-4 p-3 border rounded-lg ${bg} ${border}`;
-            }
-        }
-
-        /**
-         * Main function to perform a manual sync with Supabase.
-         * It fetches remote data, merges it with local data, and pushes the result back.
-         */
-        async function performManualSync() {
-            const syncIcon = document.getElementById('sync-icon');
-            const syncBtn = document.getElementById('sync-btn');
-
-            try {
-                if (syncIcon && syncBtn) {
-                    syncIcon.style.animation = 'spin 1s linear infinite';
-                    syncBtn.disabled = true;
-                }
-
-                updateSyncStatus('1. Fetching latest data...', 'yellow');
-                
-                // Step 1: Fetch the latest data from the cloud for the current session.
-                const { data: remoteData, error: fetchError } = await window.supabaseClient
-                    .from('inventory_sessions')
-                    .select('products, sales, last_updated')
-                    .eq('session_id', sessionId)
-                    .single();
-
-                // PGRST116 means no row was found, which is fine for a first sync. Any other error is a failure.
-                if (fetchError && fetchError.code !== 'PGRST116') {
-                    throw new Error(fetchError.message);
-                }
-
-                // Step 2: Merge the cloud data with local data.
-                updateSyncStatus('2. Merging local and cloud data...', 'yellow');
-                if (remoteData) {
-                    // If remote data exists, perform a full merge and recalculation.
-                    mergeAndRecalculate(remoteData);
-                }
-                // If no remote data exists, our local data is the source of truth, so we just proceed to upload it.
-
-                // Step 3: Sync the newly merged and calculated data back to the cloud.
-                updateSyncStatus('3. Syncing merged data to cloud...', 'yellow');
-                const syncData = {
-                    session_id: sessionId,
-                    device_id: deviceId,
-                    products: products,
-                    sales: sales,
-                    last_updated: new Date().toISOString()
-                };
-
-                const { error: upsertError } = await window.supabaseClient
-                    .from('inventory_sessions')
-                    .upsert([syncData], { onConflict: 'session_id' });
-
-                if (upsertError) {
-                    throw new Error(upsertError.message);
-                }
-
-                // Step 4: Finalize by saving the merged data locally and updating the UI.
-                saveData(); 
-                refreshAllUI();
-                updateSyncStatus('Sync complete!', 'green');
-                showNotification('Data successfully synced with the cloud.');
-
-            } catch (error) {
-                console.error('❌ Manual sync failed:', error);
-                updateSyncStatus(`Sync failed: ${error.message}`, 'red');
-                showNotification('Sync failed: ' + error.message, 'error');
-            } finally {
-                if (syncIcon && syncBtn) {
-                    syncIcon.style.animation = '';
-                    syncBtn.disabled = false;
-                }
-            }
-        }
-
-        /**
-         * Merges remote data with local data and recalculates the final state.
-         * This function is the core of the sync logic.
-         * @param {object} remoteData - The data object fetched from Supabase.
-         */
-        function mergeAndRecalculate(remoteData) {
-            console.log('🔄 Merging data...');
-            
-            // --- Log initial state for debugging ---
-            console.log('Initial Local Products:', JSON.parse(JSON.stringify(products)));
-            console.log('Initial Local Sales:', JSON.parse(JSON.stringify(sales)));
-            console.log('Fetched Remote Data:', remoteData);
-
-            const localProducts = JSON.parse(JSON.stringify(products)); // Deep copy for safety
-            const localSales = JSON.parse(JSON.stringify(sales));
-            
-            // --- Step 1: Merge Sales ---
-            // Create a definitive list of all sales from both local and remote, removing duplicates.
-            const combinedSalesMap = new Map();
-            localSales.forEach(sale => combinedSalesMap.set(sale.id, sale));
-            if (remoteData.sales && Array.isArray(remoteData.sales)) {
-              remoteData.sales.forEach(sale => combinedSalesMap.set(sale.id, sale));
-            }
-            const finalSales = Array.from(combinedSalesMap.values());
-
-            // --- Step 2: Merge and Recalculate Inventory ---
-            // For each product, determine the true stock level by reconciling additions and sales.
-            const finalProducts = JSON.parse(JSON.stringify(initialProducts)).map(initialProd => {
-                const localProduct = localProducts.find(p => p.id === initialProd.id) || { ...initialProd };
-                const remoteProduct = (remoteData.products || []).find(p => p.id === initialProd.id) || { ...initialProd };
-
-                // Calculate total sales for this product from the original local and remote lists.
-                const localSalesForProduct = localSales.filter(s => s.productId === initialProd.id).reduce((sum, s) => sum + s.quantity, 0);
-                const remoteSalesForProduct = (remoteData.sales || []).filter(s => s.productId === initialProd.id).reduce((sum, s) => sum + s.quantity, 0);
-
-                // Infer the total number of items ever *added* to the inventory.
-                // Since additions are not logged, we infer them from (current stock + total sales).
-                const inferredLocalAdditions = localProduct.quantity + localSalesForProduct;
-                const inferredRemoteAdditions = remoteProduct.quantity + remoteSalesForProduct;
-
-                // The true total of additions is the maximum found on any device.
-                // This correctly handles cases where one device added stock and hasn't synced yet.
-                const finalTotalAdditions = Math.max(inferredLocalAdditions, inferredRemoteAdditions);
-
-                // Calculate total sales from our new, definitive combined sales list.
-                const finalSalesForProduct = finalSales.filter(s => s.productId === initialProd.id).reduce((sum, s) => sum + s.quantity, 0);
-
-                // The final quantity is the total items added minus the total items sold.
-                const finalQuantity = finalTotalAdditions - finalSalesForProduct;
-
-                return {
-                    ...initialProd,
-                    quantity: Math.max(0, finalQuantity) // Ensure quantity doesn't go below zero.
-                };
-            });
-            
-            // --- Log final state for debugging ---
-            console.log('Final Calculated Products:', finalProducts);
-            console.log('Final Calculated Sales:', finalSales);
-
-            // --- Step 3: Update the global state variables with the merged and calculated data ---
-            products = finalProducts;
-            sales = finalSales;
-            
-            console.log('✅ Global state updated.');
-        }
-        
-        // --- App Startup ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initDeviceId();
-            loadData();
-            initTabs();
-            initScanner();
-            initSales();
-            initInventory();
-            initDataManagement();
-            refreshAllUI();
-            
-            // Initialize sync status
-            updateSyncStatus('Ready to sync with Supabase', 'default');
-            
-            window.adjustSaleQuantity = adjustSaleQuantity;
-            window.removeSaleItem = removeSaleItem;
-            window.adjustInventoryQuantity = adjustInventoryQuantity;
-            window.removeInventoryItem = removeInventoryItem;
-            window.openQuickEdit = openQuickEdit;
+            loadDataFromSheets();
         });
-
+        
+    // Keep functions that are pure UI/State and don't interact with storage
+    // The following functions are called by UI elements and are kept as they were,
+    // because their core logic (modifying staging arrays, etc.) is still valid.
+    // The functions that confirm these changes (confirmSale, etc.) have been
+    // modified above to call saveDataToSheets().
+    showNotification = function(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        const text = document.getElementById('notification-text');
+        text.textContent = message;
+        notification.className = `fixed top-0 left-0 right-0 z-50`;
+        const innerDiv = notification.querySelector('.notification');
+        innerDiv.className = `notification p-4 text-center text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+        notification.classList.remove('hidden');
+        setTimeout(() => notification.classList.add('hidden'), 3000);
+    }
+    initTabs = function() {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                tabContents.forEach(content => {
+                    content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
+                    if (content.id === `${tabName}-tab` && tabName === 'reports') updateReports();
+                });
+            });
+        });
+    }
+    refreshAllUI = function() {
+        console.log('Refreshing all UI components.');
+        updateInventoryDisplay();
+        updateTodaysSales();
+        updateReports();
+        document.getElementById('session-info').textContent = currentSheetName || 'N/A';
+        updateSaleStaging();
+        updateInventoryStaging();
+    }
+    initScanner = function() {
+        html5QrCode = new Html5Qrcode("reader");
+        document.getElementById('scan-btn').addEventListener('click', () => { currentScanner = 'sales'; openScanner(); });
+        document.getElementById('inv-scan-btn').addEventListener('click', () => { currentScanner = 'inventory'; openScanner(); });
+        document.getElementById('close-scanner').addEventListener('click', closeScanner);
+    }
+    openScanner = function() {
+        const modal = document.getElementById('scanner-modal');
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.querySelector('.modal-content').classList.remove('scale-95');
+        document.getElementById('scanner-status').textContent = 'Starting camera...';
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                if (currentScanner === 'sales') document.getElementById('barcode-input').value = decodedText;
+                else document.getElementById('inv-barcode').value = decodedText;
+                closeScanner();
+                if (navigator.vibrate) navigator.vibrate(100);
+            }, () => {}
+        ).catch(err => document.getElementById('scanner-status').textContent = 'Camera unavailable.');
+    }
+    closeScanner = function() {
+        const modal = document.getElementById('scanner-modal');
+        if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.querySelector('.modal-content').classList.add('scale-95');
+    }
+    initSales = function() {
+        document.getElementById('add-to-sale-btn').addEventListener('click', addToSaleStaging);
+        document.getElementById('barcode-input').addEventListener('keypress', (e) => e.key === 'Enter' && addToSaleStaging());
+        document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
+        document.getElementById('clear-sale-staging').addEventListener('click', clearSaleStaging);
+    }
+    addToSaleStaging = function() {
+        const barcode = document.getElementById('barcode-input').value.trim();
+        const quantity = parseInt(document.getElementById('quantity-input').value);
+        if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
+        const product = products.find(p => p.code === barcode);
+        if (!product) return showNotification('Product not found.', 'error');
+        const existing = saleStaging.find(item => item.productId === product.id);
+        if (existing) existing.quantity += quantity;
+        else saleStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity: quantity, maxQuantity: product.quantity });
+        updateSaleStaging();
+        showNotification(`Added ${product.name} to sale.`);
+        document.getElementById('barcode-input').value = '';
+        document.getElementById('quantity-input').value = '1';
+    }
+    updateSaleStaging = function() {
+        const container = document.getElementById('sale-staging');
+        const confirmBtn = document.getElementById('confirm-sale-btn');
+        if (saleStaging.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">Add items to complete sale</p>';
+            confirmBtn.disabled = true; return;
+        }
+        confirmBtn.disabled = false;
+        container.innerHTML = saleStaging.map((item, index) => {
+            const product = products.find(p => p.id === item.productId) || { quantity: 0 };
+            item.maxQuantity = product.quantity;
+            const isOverStock = item.quantity > item.maxQuantity;
+            return `
+            <div class="flex items-center justify-between p-3 rounded-lg ${isOverStock ? 'bg-red-100' : 'bg-gray-50'}">
+                <div>
+                    <div class="font-medium">${item.productName} ${item.productVariant}</div>
+                    <div class="text-sm ${isOverStock ? 'text-red-600 font-semibold' : 'text-gray-500'}">Available: ${item.maxQuantity}</div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="adjustSaleQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
+                    <span class="font-semibold w-8 text-center">${item.quantity}</span>
+                    <button onclick="adjustSaleQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
+                    <button onclick="removeSaleItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    window.adjustSaleQuantity = function(index, change) {
+        if (saleStaging[index]) {
+            const newQuantity = saleStaging[index].quantity + change;
+            if (newQuantity <= 0) removeSaleItem(index);
+            else {
+                if(newQuantity > saleStaging[index].maxQuantity) showNotification('Quantity exceeds available stock.', 'error');
+                saleStaging[index].quantity = newQuantity;
+            }
+            updateSaleStaging();
+        }
+    };
+    window.removeSaleItem = function(index) { saleStaging.splice(index, 1); updateSaleStaging(); };
+    clearSaleStaging = function() { saleStaging = []; updateSaleStaging(); }
+    updateTodaysSales = function() {
+        const container = document.getElementById('today-sales');
+        const todaySales = sales.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString());
+        if (todaySales.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">No sales recorded yet</p>';
+            return;
+        }
+        container.innerHTML = todaySales.slice(-10).reverse().map(sale => `
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div><div class="font-medium">${sale.productName}</div><div class="text-sm text-gray-500">${sale.productVariant}</div></div>
+                <div class="text-right"><div class="font-semibold">${sale.quantity}</div><div class="text-xs text-gray-500">${new Date(sale.timestamp).toLocaleTimeString()}</div></div>
+            </div>`).join('');
+    }
+    addToInventoryStaging = function() {
+        const barcode = document.getElementById('inv-barcode').value.trim();
+        const quantity = parseInt(document.getElementById('inv-quantity').value);
+        if (!barcode || isNaN(quantity) || quantity <= 0) return showNotification('Invalid barcode or quantity.', 'error');
+        const product = products.find(p => p.code === barcode);
+        if (!product) return showNotification('Product not found.', 'error');
+        const existing = inventoryStaging.find(item => item.productId === product.id);
+        if (existing) existing.quantity += quantity;
+        else inventoryStaging.push({ productId: product.id, productName: product.name, productVariant: product.variant, quantity });
+        updateInventoryStaging();
+        showNotification(`Staged ${product.name} for inventory update.`);
+        document.getElementById('inv-barcode').value = '';
+        document.getElementById('inv-quantity').value = '1';
+    }
+    updateInventoryStaging = function() {
+        const container = document.getElementById('inventory-staging');
+        const confirmBtn = document.getElementById('confirm-inventory-btn');
+        if (inventoryStaging.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">Add products to update inventory</p>';
+            confirmBtn.disabled = true; return;
+        }
+        confirmBtn.disabled = false;
+        container.innerHTML = inventoryStaging.map((item, index) => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div><div class="font-medium">${item.productName}</div><div class="text-sm text-gray-500">${item.productVariant}</div></div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="adjustInventoryQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm">-</button>
+                    <span class="font-semibold w-12 text-center">+${item.quantity}</span>
+                    <button onclick="adjustInventoryQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm">+</button>
+                    <button onclick="removeInventoryItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm">×</button>
+                </div>
+            </div>`).join('');
+    }
+    window.adjustInventoryQuantity = function(index, change) {
+        if (inventoryStaging[index]) {
+            const newQuantity = inventoryStaging[index].quantity + change;
+            if (newQuantity <= 0) removeInventoryItem(index);
+            else inventoryStaging[index].quantity = newQuantity;
+            updateInventoryStaging();
+        }
+    };
+    window.removeInventoryItem = function(index) { inventoryStaging.splice(index, 1); updateInventoryStaging(); };
+    clearInventoryStaging = function() { inventoryStaging = []; updateInventoryStaging(); }
+    updateInventoryDisplay = function() {
+        const tbody = document.getElementById('inventory-list');
+        if (!tbody) return;
+        tbody.innerHTML = products.map(product => {
+            const soldToday = sales.filter(s => s.productId === product.id && new Date(s.timestamp).toDateString() === new Date().toDateString()).reduce((sum, s) => sum + s.quantity, 0);
+            return `
+                <tr class="${product.quantity <= 5 ? 'bg-red-50' : ''} border-b">
+                    <td class="px-4 py-3"><div class="font-medium">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div></td>
+                    <td class="px-4 py-3 font-mono text-sm">${product.code}</td>
+                    <td class="px-4 py-3 text-right font-semibold ${product.quantity <= 5 ? 'text-red-600' : ''}">${product.quantity}</td>
+                    <td class="px-4 py-3 text-right text-blue-600 font-medium">${soldToday}</td>
+                    <td class="px-4 py-3 text-center"><button onclick="openQuickEdit('${product.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">✏️ Edit</button></td>
+                </tr>`;
+        }).join('');
+    }
+    window.openQuickEdit = function(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        editingProductId = productId;
+        document.getElementById('edit-product-info').innerHTML = `<div class="font-medium text-lg">${product.name}</div><div class="text-sm text-gray-500">${product.variant}</div>`;
+        document.getElementById('edit-quantity-input').value = product.quantity;
+        document.getElementById('quick-edit-modal').classList.remove('opacity-0', 'pointer-events-none');
+        setTimeout(() => document.getElementById('edit-quantity-input').focus(), 50);
+    };
+    closeQuickEditModal = function() {
+        document.getElementById('quick-edit-modal').classList.add('opacity-0', 'pointer-events-none');
+        editingProductId = null;
+    }
+    updateReports = function() {
+        const totalSales = sales.reduce((sum, s) => sum + s.quantity, 0);
+        const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
+        const lowStock = products.filter(p => p.quantity > 0 && p.quantity <= 5).length;
+        document.getElementById('total-sales').textContent = totalSales;
+        document.getElementById('total-products').textContent = totalProducts;
+        document.getElementById('low-stock').textContent = lowStock;
+        updateSalesReport();
+    }
+    updateSalesReport = function() {
+        const container = document.getElementById('sales-report');
+        if (sales.length === 0) return container.innerHTML = '<p class="text-gray-500 text-center py-8">No sales data available</p>';
+        const sortedSales = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        container.innerHTML = `
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left">Date/Time</th><th class="px-4 py-3 text-left">Product</th><th class="px-4 py-3 text-right">Quantity</th></tr></thead>
+                <tbody>
+                    ${sortedSales.slice(0, 100).map(sale => `
+                        <tr class="border-b">
+                            <td class="px-4 py-3 text-gray-600">${new Date(sale.timestamp).toLocaleString()}</td>
+                            <td class="px-4 py-3"><div class="font-medium">${sale.productName}</div><div class="text-xs text-gray-500">${sale.productVariant}</div></td>
+                            <td class="px-4 py-3 text-right font-semibold">${sale.quantity}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>`;
+    }
     </script>
 </body>
 </html>
