@@ -117,13 +117,27 @@
                                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                             
-                            <button id="record-sale-btn" class="btn-primary w-full text-white py-3 rounded-lg font-semibold">
-                                ✅ Record Sale
+                            <button id="add-to-sale-btn" class="btn-primary w-full text-white py-3 rounded-lg font-semibold">
+                                ➕ Add to Sale
                             </button>
                         </div>
                     </div>
 
-                    <!-- Current Session -->
+                    <!-- Sales Staging Area -->
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-semibold">Sale Items</h3>
+                            <button id="clear-sale-staging" class="text-red-500 text-sm hover:text-red-700">Clear All</button>
+                        </div>
+                        <div id="sale-staging" class="space-y-2 max-h-60 overflow-y-auto mb-4">
+                            <p class="text-gray-500 text-center py-4">Add items to complete sale</p>
+                        </div>
+                        <button id="confirm-sale-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            ✅ Confirm Sale
+                        </button>
+                    </div>
+
+                    <!-- Today's Sales Summary -->
                     <div class="card p-4">
                         <h3 class="font-semibold mb-3">Today's Sales</h3>
                         <div id="today-sales" class="space-y-2 max-h-60 overflow-y-auto">
@@ -160,8 +174,22 @@
                             </div>
                         </div>
                         
-                        <button id="add-stock-btn" class="btn-success w-full md:w-auto text-white py-3 px-6 rounded-lg font-semibold mt-4">
-                            ➕ Add to Inventory
+                        <button id="add-to-inventory-staging-btn" class="btn-success w-full md:w-auto text-white py-3 px-6 rounded-lg font-semibold mt-4">
+                            ➕ Add to Staging
+                        </button>
+                    </div>
+
+                    <!-- Inventory Staging Area -->
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Inventory Updates</h3>
+                            <button id="clear-inventory-staging" class="text-red-500 text-sm hover:text-red-700">Clear All</button>
+                        </div>
+                        <div id="inventory-staging" class="space-y-2 max-h-60 overflow-y-auto mb-4">
+                            <p class="text-gray-500 text-center py-4">Add products to update inventory</p>
+                        </div>
+                        <button id="confirm-inventory-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            ✅ Confirm Inventory Updates
                         </button>
                     </div>
 
@@ -301,6 +329,8 @@
         let sales = [];
         let html5QrCode = null;
         let currentScanner = null; // Track which input is being scanned for
+        let saleStaging = []; // Staging area for sales
+        let inventoryStaging = []; // Staging area for inventory updates
 
         // Load data from localStorage
         function loadData() {
@@ -429,10 +459,145 @@
 
         // Sales functionality
         function initSales() {
-            document.getElementById('record-sale-btn').addEventListener('click', recordSale);
+            document.getElementById('add-to-sale-btn').addEventListener('click', addToSaleStaging);
             document.getElementById('barcode-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') recordSale();
+                if (e.key === 'Enter') addToSaleStaging();
             });
+            document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
+            document.getElementById('clear-sale-staging').addEventListener('click', clearSaleStaging);
+        }
+
+        function addToSaleStaging() {
+            const barcode = document.getElementById('barcode-input').value.trim();
+            const quantity = parseInt(document.getElementById('quantity-input').value);
+            
+            if (!barcode || quantity <= 0) {
+                showNotification('Please enter a valid barcode and quantity', 'error');
+                return;
+            }
+            
+            const product = products.find(p => p.code === barcode);
+            if (!product) {
+                showNotification('Product not found', 'error');
+                return;
+            }
+            
+            // Check if product already in staging
+            const existingIndex = saleStaging.findIndex(item => item.productId === product.id);
+            if (existingIndex > -1) {
+                saleStaging[existingIndex].quantity += quantity;
+            } else {
+                saleStaging.push({
+                    productId: product.id,
+                    productName: product.name,
+                    productVariant: product.variant,
+                    quantity: quantity,
+                    maxQuantity: product.quantity
+                });
+            }
+            
+            updateSaleStaging();
+            showNotification(`Added ${quantity}x ${product.name} to sale`);
+            
+            // Clear form
+            document.getElementById('barcode-input').value = '';
+            document.getElementById('quantity-input').value = '1';
+        }
+
+        function updateSaleStaging() {
+            const container = document.getElementById('sale-staging');
+            const confirmBtn = document.getElementById('confirm-sale-btn');
+            
+            if (saleStaging.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Add items to complete sale</p>';
+                confirmBtn.disabled = true;
+                return;
+            }
+            
+            confirmBtn.disabled = false;
+            
+            container.innerHTML = saleStaging.map((item, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                        <div class="font-medium">${item.productName}</div>
+                        <div class="text-sm text-gray-500">${item.productVariant} (Available: ${item.maxQuantity})</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="adjustSaleQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm hover:bg-red-600">-</button>
+                        <span class="font-semibold w-8 text-center">${item.quantity}</span>
+                        <button onclick="adjustSaleQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm hover:bg-green-600">+</button>
+                        <button onclick="removeSaleItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm hover:bg-gray-600">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function adjustSaleQuantity(index, change) {
+            if (index >= 0 && index < saleStaging.length) {
+                const newQuantity = saleStaging[index].quantity + change;
+                if (newQuantity > 0 && newQuantity <= saleStaging[index].maxQuantity) {
+                    saleStaging[index].quantity = newQuantity;
+                    updateSaleStaging();
+                } else if (newQuantity <= 0) {
+                    removeSaleItem(index);
+                } else {
+                    showNotification('Insufficient stock available', 'error');
+                }
+            }
+        }
+
+        function removeSaleItem(index) {
+            if (index >= 0 && index < saleStaging.length) {
+                saleStaging.splice(index, 1);
+                updateSaleStaging();
+            }
+        }
+
+        function clearSaleStaging() {
+            saleStaging = [];
+            updateSaleStaging();
+        }
+
+        function confirmSale() {
+            if (saleStaging.length === 0) return;
+            
+            let hasError = false;
+            
+            // Validate all items have sufficient stock
+            for (const item of saleStaging) {
+                const product = products.find(p => p.id === item.productId);
+                if (!product || product.quantity < item.quantity) {
+                    showNotification(`Insufficient stock for ${item.productName}`, 'error');
+                    hasError = true;
+                    break;
+                }
+            }
+            
+            if (hasError) return;
+            
+            // Process the sale
+            saleStaging.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product) {
+                    product.quantity -= item.quantity;
+                    
+                    sales.push({
+                        id: Date.now() + Math.random(),
+                        productId: product.id,
+                        productName: product.name,
+                        productVariant: product.variant,
+                        quantity: item.quantity,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            });
+            
+            saveData();
+            updateInventoryDisplay();
+            updateTodaysSales();
+            clearSaleStaging();
+            
+            showNotification('Sale completed successfully!');
         }
 
         function recordSale() {
@@ -505,10 +670,12 @@
 
         // Inventory functionality
         function initInventory() {
-            document.getElementById('add-stock-btn').addEventListener('click', addStock);
+            document.getElementById('add-to-inventory-staging-btn').addEventListener('click', addToInventoryStaging);
             document.getElementById('inv-barcode').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addStock();
+                if (e.key === 'Enter') addToInventoryStaging();
             });
+            document.getElementById('confirm-inventory-btn').addEventListener('click', confirmInventoryUpdates);
+            document.getElementById('clear-inventory-staging').addEventListener('click', clearInventoryStaging);
             document.getElementById('reset-btn').addEventListener('click', () => {
                 document.getElementById('reset-modal').classList.remove('opacity-0', 'pointer-events-none');
                 document.getElementById('reset-modal').querySelector('.modal-content').classList.remove('scale-95');
@@ -517,6 +684,112 @@
             // Reset modal handlers
             document.getElementById('cancel-reset').addEventListener('click', closeResetModal);
             document.getElementById('confirm-reset').addEventListener('click', resetInventory);
+        }
+
+        function addToInventoryStaging() {
+            const barcode = document.getElementById('inv-barcode').value.trim();
+            const quantity = parseInt(document.getElementById('inv-quantity').value);
+            
+            if (!barcode || quantity <= 0) {
+                showNotification('Please enter a valid barcode and quantity', 'error');
+                return;
+            }
+            
+            const product = products.find(p => p.code === barcode);
+            if (!product) {
+                showNotification('Product not found', 'error');
+                return;
+            }
+            
+            // Check if product already in staging
+            const existingIndex = inventoryStaging.findIndex(item => item.productId === product.id);
+            if (existingIndex > -1) {
+                inventoryStaging[existingIndex].quantity += quantity;
+            } else {
+                inventoryStaging.push({
+                    productId: product.id,
+                    productName: product.name,
+                    productVariant: product.variant,
+                    quantity: quantity
+                });
+            }
+            
+            updateInventoryStaging();
+            showNotification(`Added ${quantity}x ${product.name} to inventory staging`);
+            
+            // Clear form
+            document.getElementById('inv-barcode').value = '';
+            document.getElementById('inv-quantity').value = '1';
+        }
+
+        function updateInventoryStaging() {
+            const container = document.getElementById('inventory-staging');
+            const confirmBtn = document.getElementById('confirm-inventory-btn');
+            
+            if (inventoryStaging.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Add products to update inventory</p>';
+                confirmBtn.disabled = true;
+                return;
+            }
+            
+            confirmBtn.disabled = false;
+            
+            container.innerHTML = inventoryStaging.map((item, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                        <div class="font-medium">${item.productName}</div>
+                        <div class="text-sm text-gray-500">${item.productVariant}</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="adjustInventoryQuantity(${index}, -1)" class="w-8 h-8 bg-red-500 text-white rounded-full text-sm hover:bg-red-600">-</button>
+                        <span class="font-semibold w-12 text-center">+${item.quantity}</span>
+                        <button onclick="adjustInventoryQuantity(${index}, 1)" class="w-8 h-8 bg-green-500 text-white rounded-full text-sm hover:bg-green-600">+</button>
+                        <button onclick="removeInventoryItem(${index})" class="w-8 h-8 bg-gray-500 text-white rounded-full text-sm hover:bg-gray-600">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function adjustInventoryQuantity(index, change) {
+            if (index >= 0 && index < inventoryStaging.length) {
+                const newQuantity = inventoryStaging[index].quantity + change;
+                if (newQuantity > 0) {
+                    inventoryStaging[index].quantity = newQuantity;
+                    updateInventoryStaging();
+                } else {
+                    removeInventoryItem(index);
+                }
+            }
+        }
+
+        function removeInventoryItem(index) {
+            if (index >= 0 && index < inventoryStaging.length) {
+                inventoryStaging.splice(index, 1);
+                updateInventoryStaging();
+            }
+        }
+
+        function clearInventoryStaging() {
+            inventoryStaging = [];
+            updateInventoryStaging();
+        }
+
+        function confirmInventoryUpdates() {
+            if (inventoryStaging.length === 0) return;
+            
+            // Process the inventory updates
+            inventoryStaging.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product) {
+                    product.quantity += item.quantity;
+                }
+            });
+            
+            saveData();
+            updateInventoryDisplay();
+            clearInventoryStaging();
+            
+            showNotification('Inventory updated successfully!');
         }
 
         function addStock() {
@@ -579,9 +852,13 @@
         function resetInventory() {
             products.forEach(p => p.quantity = 0);
             sales.length = 0;
+            saleStaging = [];
+            inventoryStaging = [];
             saveData();
             updateInventoryDisplay();
             updateTodaysSales();
+            updateSaleStaging();
+            updateInventoryStaging();
             updateReports();
             closeResetModal();
             showNotification('Inventory reset successfully');
@@ -704,6 +981,12 @@
             updateInventoryDisplay();
             updateTodaysSales();
             updateReports();
+            
+            // Make functions available globally for onclick handlers
+            window.adjustSaleQuantity = adjustSaleQuantity;
+            window.removeSaleItem = removeSaleItem;
+            window.adjustInventoryQuantity = adjustInventoryQuantity;
+            window.removeInventoryItem = removeInventoryItem;
         });
     </script>
 </body>
