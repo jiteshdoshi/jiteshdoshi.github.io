@@ -7,6 +7,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCe6xHdmOsvS0Sd9-g4LfeTtzTagXIbocU",
+    authDomain: "ths-imanage.firebaseapp.com",
+    projectId: "ths-imanage",
+    storageBucket: "ths-imanage.firebasestorage.app",
+    messagingSenderId: "419761456395",
+    appId: "1:419761456395:web:df1dd3348cf43e84a88e0e",
+    measurementId: "G-2FCPZ9NLP5"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -81,8 +106,9 @@
                     <p class="text-xs text-blue-100">Inventory Manager</p>
                 </div>
             </div>
-            <div class="text-xs text-blue-100">
-                📦 Offline Ready
+            <div class="text-xs text-blue-100 text-center">
+                📦 Offline Ready<br>
+                <span id="sync-status" class="text-xs">Ready</span>
             </div>
         </header>
 
@@ -265,15 +291,61 @@
 
                     <!-- Export/Import -->
                     <div class="card p-6">
-                        <h3 class="text-lg font-semibold mb-4">💾 Data Management</h3>
+                        <h3 class="text-lg font-semibold mb-4">💾 Data Management & Sync</h3>
+                        
+                        <!-- Device Info -->
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium text-gray-700">Device Info</div>
+                            <div class="text-xs text-gray-500" id="device-info">Loading...</div>
+                        </div>
+                        
+                        <!-- Sync Options -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <button id="real-time-sync-btn" class="btn-success text-white py-3 px-4 rounded-lg text-sm">
+                                🔄 Real-Time Sync
+                            </button>
+                            <button id="manual-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
+                                � Manual Sync
+                            </button>
+                        </div>
+                        
+                        <!-- Connection Status -->
+                        <div id="connection-status" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg hidden">
+                            <div class="text-sm font-medium text-yellow-800">Connection Status</div>
+                            <div class="text-xs text-yellow-700" id="connection-info">Disconnected</div>
+                        </div>
+                        
+                        <!-- Fallback Sync Options -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <button id="export-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
+                                📤 Export for Sync
+                            </button>
+                            <button id="import-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
+                                📥 Import & Merge
+                            </button>
+                        </div>
+                        
+                        <!-- Regular Export/Import -->
                         <div class="flex flex-col sm:flex-row gap-4">
                             <button id="export-btn" class="btn-primary text-white py-3 px-6 rounded-lg">
-                                📤 Export Data
+                                📤 Export Backup
                             </button>
                             <button id="import-btn" class="btn-primary text-white py-3 px-6 rounded-lg">
-                                📥 Import Data
+                                📥 Import Backup
                             </button>
                             <input type="file" id="import-file" class="hidden" accept=".json">
+                            <input type="file" id="import-sync-file" class="hidden" accept=".json">
+                        </div>
+                        
+                        <!-- Sync Instructions -->
+                        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="text-sm font-medium text-blue-800">📋 Firebase Sync Instructions:</div>
+                            <ol class="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
+                                <li><strong>Setup:</strong> Add your Firebase config above</li>
+                                <li><strong>Real-Time:</strong> Enable automatic syncing across all devices</li>
+                                <li><strong>Manual:</strong> Click "Manual Sync" to sync on demand</li>
+                                <li><strong>Fallback:</strong> Use Export/Import if Firebase fails</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -363,6 +435,22 @@
         let saleStaging = []; // Staging area for sales
         let inventoryStaging = []; // Staging area for inventory updates
         let editingProductId = null; // Track which product is being edited
+        let deviceId = null; // Unique device identifier
+        let lastSyncTime = null; // Track last sync
+        
+        // Firebase sync variables
+        let isRealTimeSyncEnabled = false;
+        let syncInterval = null;
+
+        // Initialize device ID
+        function initDeviceId() {
+            deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            lastSyncTime = localStorage.getItem('lastSyncTime');
+        }
 
         // Load data from localStorage
         function loadData() {
@@ -377,6 +465,58 @@
         function saveData() {
             localStorage.setItem('inventory_products', JSON.stringify(products));
             localStorage.setItem('inventory_sales', JSON.stringify(sales));
+            localStorage.setItem('lastSyncTime', new Date().toISOString());
+            
+            // Auto-generate sync file on changes (optional)
+            if (window.location.hash === '#auto-sync') {
+                autoGenerateSyncFile();
+            }
+        }
+
+        // Enhanced sync functions
+        function autoGenerateSyncFile() {
+            const syncData = generateSyncData();
+            const blob = new Blob([JSON.stringify(syncData, null, 2)], { type: 'application/json' });
+            
+            // Create downloadable link (won't auto-download, just makes it available)
+            if (window.lastSyncUrl) {
+                URL.revokeObjectURL(window.lastSyncUrl);
+            }
+            window.lastSyncUrl = URL.createObjectURL(blob);
+            
+            // Update sync status in UI
+            updateSyncStatus('Ready for sync');
+        }
+
+        function generateSyncData() {
+            return {
+                products: products,
+                sales: sales,
+                deviceId: deviceId,
+                deviceName: localStorage.getItem('deviceName') || deviceId,
+                lastSync: new Date().toISOString(),
+                version: '1.0',
+                checksum: generateChecksum(products, sales)
+            };
+        }
+
+        function generateChecksum(products, sales) {
+            const data = JSON.stringify({products, sales});
+            let hash = 0;
+            for (let i = 0; i < data.length; i++) {
+                const char = data.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return hash.toString(36);
+        }
+
+        function updateSyncStatus(message) {
+            const statusEl = document.getElementById('sync-status');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = 'text-xs text-green-600';
+            }
         }
 
         // Show notification
@@ -613,13 +753,22 @@
                 if (product) {
                     product.quantity -= item.quantity;
                     
-                    sales.push({
+                    const sale = {
                         id: Date.now() + Math.random(),
                         productId: product.id,
                         productName: product.name,
                         productVariant: product.variant,
                         quantity: item.quantity,
                         timestamp: new Date().toISOString()
+                    };
+                    
+                    sales.push(sale);
+                    
+                    // Broadcast real-time update
+                    broadcastUpdate('SALE', {
+                        sale: sale,
+                        productId: product.id,
+                        quantity: item.quantity
                     });
                 }
             });
@@ -945,6 +1094,13 @@
                 updateInventoryDisplay();
                 closeQuickEditModal();
                 
+                // Broadcast real-time inventory update
+                broadcastUpdate('INVENTORY', {
+                    productId: product.id,
+                    newQuantity: newQuantity,
+                    oldQuantity: oldQuantity
+                });
+                
                 showNotification(`Updated ${product.name} stock from ${oldQuantity} to ${newQuantity}`);
             }
         }
@@ -1015,13 +1171,278 @@
             `;
         }
 
-        // Data export/import
+        // Data export/import with enhanced sync
         function initDataManagement() {
             document.getElementById('export-btn').addEventListener('click', exportData);
+            document.getElementById('export-sync-btn').addEventListener('click', exportSyncData);
+            document.getElementById('real-time-sync-btn').addEventListener('click', toggleRealTimeSync);
+            document.getElementById('manual-sync-btn').addEventListener('click', manualSync);
             document.getElementById('import-btn').addEventListener('click', () => {
                 document.getElementById('import-file').click();
             });
+            document.getElementById('import-sync-btn').addEventListener('click', () => {
+                document.getElementById('import-sync-file').click();
+            });
             document.getElementById('import-file').addEventListener('change', importData);
+            document.getElementById('import-sync-file').addEventListener('change', importSyncData);
+            
+            // Update device info display
+            updateDeviceInfo();
+        }
+
+        function updateDeviceInfo() {
+            const deviceInfo = document.getElementById('device-info');
+            if (deviceInfo) {
+                const deviceName = localStorage.getItem('deviceName') || 'Unnamed Device';
+                deviceInfo.innerHTML = `
+                    Device: ${deviceName}<br>
+                    ID: ${deviceId}<br>
+                    Last Sync: ${lastSyncTime ? new Date(lastSyncTime).toLocaleString() : 'Never'}
+                `;
+            }
+        }
+
+        function exportSyncData() {
+            const syncData = generateSyncData();
+            const filename = `inventory-sync-${deviceId}-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const blob = new Blob([JSON.stringify(syncData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Sync file exported successfully');
+            updateSyncStatus('Exported for sync');
+        }
+
+        function importSyncData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const syncData = JSON.parse(e.target.result);
+                    if (validateSyncData(syncData)) {
+                        mergeSyncData(syncData);
+                        showNotification('Data synced successfully');
+                        updateSyncStatus('Synced from ' + (syncData.deviceName || 'other device'));
+                    } else {
+                        showNotification('Invalid sync file format', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error reading sync file', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset file input
+        }
+
+        function validateSyncData(data) {
+            return data && 
+                   data.version && 
+                   Array.isArray(data.products) && 
+                   Array.isArray(data.sales) && 
+                   data.deviceId && 
+                   data.lastSync;
+        }
+
+        function mergeSyncData(syncData) {
+            const currentTime = new Date().toISOString();
+            
+            // Merge products (update quantities, don't duplicate)
+            syncData.products.forEach(syncProduct => {
+                const existingProduct = products.find(p => p.id === syncProduct.id);
+                if (existingProduct) {
+                    // Take the higher quantity (assume most recent is correct)
+                    if (syncData.lastSync > (lastSyncTime || '2000-01-01')) {
+                        existingProduct.quantity = syncProduct.quantity;
+                    }
+                } else {
+                    // Add new product
+                    products.push(syncProduct);
+                }
+            });
+            
+            // Merge sales (avoid duplicates by checking ID and timestamp)
+            syncData.sales.forEach(syncSale => {
+                const exists = sales.some(s => 
+                    s.id === syncSale.id || 
+                    (s.productId === syncSale.productId && 
+                     s.timestamp === syncSale.timestamp &&
+                     s.quantity === syncSale.quantity)
+                );
+                
+                if (!exists) {
+                    sales.push(syncSale);
+                }
+            });
+            
+            // Sort sales by timestamp
+            sales.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            // Update last sync time
+            lastSyncTime = currentTime;
+            localStorage.setItem('lastSyncTime', currentTime);
+            
+            // Save merged data
+            saveData();
+            updateInventoryDisplay();
+            updateTodaysSales();
+            updateReports();
+            updateDeviceInfo();
+        }
+
+        // Firebase sync functions
+        function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.firebaseReady) {
+                    resolve();
+                } else {
+                    const checkFirebase = setInterval(() => {
+                        if (window.firebaseReady) {
+                            clearInterval(checkFirebase);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
+
+        async function syncToFirebase() {
+            try {
+                await waitForFirebase();
+                updateConnectionStatus('Syncing to Firebase...', 'yellow');
+                
+                const dataRef = window.firebaseRef(window.firebaseDB, 'inventoryData');
+                await window.firebaseSet(dataRef, {
+                    products: products,
+                    sales: sales,
+                    deviceId: deviceId,
+                    lastUpdated: window.serverTimestamp(),
+                    timestamp: new Date().toISOString()
+                });
+                
+                updateConnectionStatus('Synced to Firebase successfully', 'green');
+                showNotification('Data synced to Firebase');
+            } catch (error) {
+                console.error('Firebase sync error:', error);
+                updateConnectionStatus('Firebase sync failed', 'red');
+                showNotification('Sync failed: ' + error.message, 'error');
+            }
+        }
+
+        async function syncFromFirebase() {
+            try {
+                await waitForFirebase();
+                updateConnectionStatus('Getting data from Firebase...', 'yellow');
+                
+                const dataRef = window.firebaseRef(window.firebaseDB, 'inventoryData');
+                const snapshot = await window.firebaseGet(dataRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    mergeSyncData(data);
+                    updateConnectionStatus('Synced from Firebase successfully', 'green');
+                    showNotification('Data synced from Firebase');
+                } else {
+                    updateConnectionStatus('No data found in Firebase', 'gray');
+                    showNotification('No existing data in Firebase');
+                }
+            } catch (error) {
+                console.error('Firebase sync error:', error);
+                updateConnectionStatus('Firebase sync failed', 'red');
+                showNotification('Sync failed: ' + error.message, 'error');
+            }
+        }
+
+        async function manualSync() {
+            try {
+                // First upload our data
+                await syncToFirebase();
+                // Then get latest data
+                await syncFromFirebase();
+            } catch (error) {
+                console.error('Manual sync failed:', error);
+            }
+        }
+
+        async function setupRealTimeSync() {
+            try {
+                await waitForFirebase();
+                
+                const dataRef = window.firebaseRef(window.firebaseDB, 'inventoryData');
+                window.firebaseOnValue(dataRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        // Only sync if it's from another device
+                        if (data.deviceId !== deviceId) {
+                            mergeSyncData(data);
+                            showNotification(`Data synced from device: ${data.deviceId.substring(0, 8)}...`);
+                        }
+                    }
+                });
+                
+                updateConnectionStatus('Real-time sync active', 'green');
+            } catch (error) {
+                console.error('Real-time sync setup failed:', error);
+                updateConnectionStatus('Real-time sync failed', 'red');
+            }
+        }
+
+        function toggleRealTimeSync() {
+            isRealTimeSyncEnabled = !isRealTimeSyncEnabled;
+            const btn = document.getElementById('real-time-sync-btn');
+            
+            if (isRealTimeSyncEnabled) {
+                btn.textContent = '🔄 Sync Enabled';
+                btn.className = 'btn-success text-white py-3 px-4 rounded-lg text-sm bg-green-600';
+                showNotification('Real-time sync enabled');
+                setupRealTimeSync();
+                // Initial sync when enabling
+                syncFromFirebase();
+            } else {
+                btn.textContent = '🔄 Real-Time Sync';
+                btn.className = 'btn-success text-white py-3 px-4 rounded-lg text-sm';
+                showNotification('Real-time sync disabled');
+                updateConnectionStatus('Real-time sync disabled', 'gray');
+            }
+        }
+
+        function broadcastUpdate(updateType, updateData) {
+            // Automatically sync to Firebase when changes occur
+            if (isRealTimeSyncEnabled) {
+                syncToFirebase();
+            }
+        }
+
+        function updateConnectionStatus(message, color) {
+            const statusDiv = document.getElementById('connection-status');
+            const infoDiv = document.getElementById('connection-info');
+            
+            if (statusDiv && infoDiv) {
+                statusDiv.classList.remove('hidden');
+                infoDiv.textContent = message;
+                
+                // Update color
+                statusDiv.className = `mb-4 p-3 border rounded-lg`;
+                if (color === 'green') {
+                    statusDiv.classList.add('bg-green-50', 'border-green-200');
+                    infoDiv.className = 'text-xs text-green-700';
+                } else if (color === 'red') {
+                    statusDiv.classList.add('bg-red-50', 'border-red-200');
+                    infoDiv.className = 'text-xs text-red-700';
+                } else if (color === 'yellow') {
+                    statusDiv.classList.add('bg-yellow-50', 'border-yellow-200');
+                    infoDiv.className = 'text-xs text-yellow-700';
+                } else {
+                    statusDiv.classList.add('bg-gray-50', 'border-gray-200');
+                    infoDiv.className = 'text-xs text-gray-700';
+                }
+            }
         }
 
         function exportData() {
@@ -1071,6 +1492,7 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
+            initDeviceId();
             loadData();
             initTabs();
             initScanner();
@@ -1088,6 +1510,11 @@
             window.adjustInventoryQuantity = adjustInventoryQuantity;
             window.removeInventoryItem = removeInventoryItem;
             window.openQuickEdit = openQuickEdit;
+            
+            // Check for auto-sync mode
+            if (window.location.hash === '#auto-sync') {
+                showNotification('Auto-sync mode enabled');
+            }
         });
     </script>
 </body>
