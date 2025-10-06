@@ -3,184 +3,707 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Honey Shelter Inventory (Offline)</title>
+    <title>Inventory Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Barcode Scanner Library -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
             overscroll-behavior: none;
         }
-        /* Custom scrollbar for better aesthetics */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-        .modal-backdrop { background-color: rgba(0,0,0,0.5); transition: opacity 0.3s ease-in-out; }
-        .modal-content { transition: transform 0.3s ease-in-out; }
-        #reader { width: 100%; border: 2px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
-        #scanner-modal video { width: 100%; height: auto; }
-        .nav-btn.active {
-            background-color: #f59e0b; /* amber-500 */
+        .tab-btn.active {
+            background-color: #3b82f6;
             color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        #reader {
+            width: 100%;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #047857);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .notification {
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-50 text-gray-800">
+    <!-- Notification Area -->
+    <div id="notification" class="fixed top-0 left-0 right-0 z-50 hidden">
+        <div class="notification bg-green-500 text-white p-4 text-center">
+            <span id="notification-text"></span>
+        </div>
+    </div>
 
     <div id="app" class="h-screen w-screen flex flex-col">
         <!-- Header -->
-        <header class="bg-amber-500 text-white shadow-md p-4 flex items-center justify-between z-20 flex-shrink-0">
-            <div class="flex items-center space-x-4">
-                <img src="https://static.wixstatic.com/media/311af0_85acadb4f0c246959f774351d0564f08~mv2.png/v1/fill/w_70,h_80,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Logo-png-Dark-Name_edited.png" alt="The Honey Shelter Logo" class="h-12 w-auto">
-                <h1 class="text-2xl font-bold">The Honey Shelter</h1>
-            </div>
-            <div id="app-status" class="text-sm bg-green-500 px-2 py-1 rounded">Offline Ready</div>
+        <header class="bg-blue-600 text-white shadow-lg p-4 flex items-center justify-center z-20 flex-shrink-0">
+            <h1 class="text-xl font-bold">📦 Inventory Manager</h1>
         </header>
 
-        <!-- Navigation Menu -->
-        <nav class="bg-white shadow-md flex justify-around p-1 flex-shrink-0">
-            <button data-page="scanner-page" class="nav-btn flex-1 py-3 px-4 text-center font-medium rounded-md active">Scanner</button>
-            <button data-page="inventory-page" class="nav-btn flex-1 py-3 px-4 text-center font-medium rounded-md">Inventory</button>
-            <button data-page="reports-page" class="nav-btn flex-1 py-3 px-4 text-center font-medium rounded-md">Reports</button>
+        <!-- Tab Navigation -->
+        <nav class="bg-white shadow-md flex justify-around p-2 flex-shrink-0">
+            <button data-tab="sales" class="tab-btn flex-1 py-3 px-4 text-center font-medium rounded-lg mx-1 active">
+                💰 Sales
+            </button>
+            <button data-tab="inventory" class="tab-btn flex-1 py-3 px-4 text-center font-medium rounded-lg mx-1">
+                📋 Inventory
+            </button>
+            <button data-tab="reports" class="tab-btn flex-1 py-3 px-4 text-center font-medium rounded-lg mx-1">
+                📊 Reports
+            </button>
         </nav>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto">
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4">
             
-            <!-- Scanner Page -->
-            <div id="scanner-page" class="page-content p-4 lg:p-6">
-                 <div class="max-w-md mx-auto">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Scanner & Actions</h2>
-                    <div class="mb-4"><div class="flex items-center justify-center rounded-lg bg-gray-200 p-1"><button id="scan-mode-add" class="w-full text-center py-2 px-4 rounded-md text-sm font-medium bg-white text-amber-600 shadow">Add Stock</button><button id="scan-mode-sell" class="w-full text-center py-2 px-4 rounded-md text-sm font-medium text-gray-500">Record Sale</button></div></div>
-                    <div class="mb-4"><label for="barcode-input" class="block text-sm font-medium text-gray-600 mb-1">Barcode</label><div class="relative"><input type="text" id="barcode-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition pr-10" placeholder="Enter or scan barcode..."><button id="scan-camera-btn" title="Scan with Camera" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-amber-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button></div></div>
-                    <div class="mb-4"><label for="quantity-input" class="block text-sm font-medium text-gray-600 mb-1">Quantity</label><input type="number" id="quantity-input" value="1" min="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition"></div>
-                    <button id="submit-scan" class="w-full bg-amber-500 text-white py-3 rounded-lg font-semibold hover:bg-amber-600 transition shadow-sm">Add to Transaction</button>
-                    <div id="scan-status" class="mt-3 text-center text-sm min-h-[20px]"></div>
+            <!-- Sales Tab -->
+            <div id="sales-tab" class="tab-content">
+                <div class="max-w-md mx-auto space-y-6">
+                    <!-- Scanner Section -->
+                    <div class="card p-6">
+                        <h2 class="text-lg font-semibold mb-4 text-center">📱 Record Sale</h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Barcode</label>
+                                <div class="relative">
+                                    <input type="text" id="barcode-input" 
+                                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12" 
+                                           placeholder="Scan or enter barcode...">
+                                    <button id="scan-btn" class="absolute right-2 top-2 p-2 text-blue-600 hover:bg-blue-50 rounded">
+                                        📷
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                <input type="number" id="quantity-input" value="1" min="1" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <button id="record-sale-btn" class="btn-primary w-full text-white py-3 rounded-lg font-semibold">
+                                ✅ Record Sale
+                            </button>
+                        </div>
+                    </div>
 
-                    <hr class="my-4 border-t border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Current Transaction</h3>
-                    <div id="transaction-list" class="overflow-y-auto bg-gray-50 p-2 rounded-lg border min-h-[100px]">
-                        <p class="text-center text-gray-500 text-sm p-4">Scan items to add them here.</p>
+                    <!-- Current Session -->
+                    <div class="card p-4">
+                        <h3 class="font-semibold mb-3">Today's Sales</h3>
+                        <div id="today-sales" class="space-y-2 max-h-60 overflow-y-auto">
+                            <p class="text-gray-500 text-center py-4">No sales recorded yet</p>
+                        </div>
                     </div>
-                    <div id="transaction-actions" class="mt-2 space-y-2">
-                         <button id="confirm-transaction-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">Confirm Transaction</button>
-                         <button id="clear-transaction-btn" class="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition text-sm disabled:bg-gray-400 disabled:cursor-not-allowed">Clear Transaction</button>
-                    </div>
-                 </div>
+                </div>
             </div>
 
-            <!-- Inventory Page -->
-            <div id="inventory-page" class="page-content p-4 lg:p-6 hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700">Manage Inventory</h2>
-                    <input type="text" id="inventory-search" placeholder="Search products..." class="w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-lg text-sm">
-                </div>
-                <div id="inventory-table-container" class="bg-white rounded-lg shadow overflow-hidden mb-6"></div>
-                <div class="space-y-3 max-w-sm mx-auto">
-                    <button id="add-new-product-btn" class="w-full bg-gray-700 text-white py-2 rounded-lg font-semibold hover:bg-gray-800 transition text-sm"> + Add New Product </button>
-                    <button id="set-initial-stock-btn" class="w-full bg-sky-600 text-white py-2 rounded-lg font-semibold hover:bg-sky-700 transition text-sm"> Set Initial Stock </button>
-                    <button id="reset-inventory-btn" class="w-full bg-gray-500 text-white py-2 rounded-lg font-semibold hover:bg-gray-600 transition text-sm"> Reset All Inventory </button>
+            <!-- Inventory Tab -->
+            <div id="inventory-tab" class="tab-content hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Add Product Section -->
+                    <div class="card p-6">
+                        <h2 class="text-lg font-semibold mb-4">📦 Add/Update Inventory</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product Barcode</label>
+                                <div class="relative">
+                                    <input type="text" id="inv-barcode" 
+                                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12" 
+                                           placeholder="Scan or enter barcode...">
+                                    <button id="inv-scan-btn" class="absolute right-2 top-2 p-2 text-blue-600 hover:bg-blue-50 rounded">
+                                        📷
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Add Quantity</label>
+                                <input type="number" id="inv-quantity" value="1" min="1" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+                        
+                        <button id="add-stock-btn" class="btn-success w-full md:w-auto text-white py-3 px-6 rounded-lg font-semibold mt-4">
+                            ➕ Add to Inventory
+                        </button>
+                    </div>
+
+                    <!-- Product List -->
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Current Inventory</h3>
+                            <button id="reset-btn" class="btn-danger text-white py-2 px-4 rounded-lg text-sm">
+                                🔄 Reset Session
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left">Product</th>
+                                        <th class="px-4 py-3 text-left">Barcode</th>
+                                        <th class="px-4 py-3 text-right">Stock</th>
+                                        <th class="px-4 py-3 text-right">Sold Today</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-list">
+                                    <!-- Products will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Reports Page -->
-            <div id="reports-page" class="page-content p-4 lg:p-6 hidden">
-                <h2 class="text-xl font-semibold text-gray-700 mb-4">Session Report</h2>
-                <div id="report-summary" class="grid grid-cols-2 gap-4 mb-6"></div>
-                <div class="space-y-3 mb-6">
-                    <button id="export-data-btn" class="w-full max-w-xs mx-auto bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">Export Session Data</button>
-                    <button id="import-data-btn" class="w-full max-w-xs mx-auto bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm">Import Session Data</button>
-                    <input type="file" id="import-file-input" class="hidden" accept=".json">
+            <!-- Reports Tab -->
+            <div id="reports-tab" class="tab-content hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="card p-6 text-center">
+                            <div class="text-2xl mb-2">💰</div>
+                            <div class="text-2xl font-bold text-blue-600" id="total-sales">0</div>
+                            <div class="text-sm text-gray-600">Total Items Sold</div>
+                        </div>
+                        <div class="card p-6 text-center">
+                            <div class="text-2xl mb-2">📦</div>
+                            <div class="text-2xl font-bold text-green-600" id="total-products">0</div>
+                            <div class="text-sm text-gray-600">Products in Stock</div>
+                        </div>
+                        <div class="card p-6 text-center">
+                            <div class="text-2xl mb-2">⚠️</div>
+                            <div class="text-2xl font-bold text-red-600" id="low-stock">0</div>
+                            <div class="text-sm text-gray-600">Low Stock Items</div>
+                        </div>
+                    </div>
+
+                    <!-- Sales Report -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold mb-4">📈 Sales Report</h3>
+                        <div id="sales-report" class="overflow-x-auto">
+                            <!-- Sales report will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Export/Import -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold mb-4">💾 Data Management</h3>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button id="export-btn" class="btn-primary text-white py-3 px-6 rounded-lg">
+                                📤 Export Data
+                            </button>
+                            <button id="import-btn" class="btn-primary text-white py-3 px-6 rounded-lg">
+                                📥 Import Data
+                            </button>
+                            <input type="file" id="import-file" class="hidden" accept=".json">
+                        </div>
+                    </div>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Sales Log</h3>
-                <div id="sales-table-container" class="bg-white rounded-lg shadow overflow-hidden"></div>
             </div>
         </main>
     </div>
-    
-    <!-- All Modals (structurally unchanged) -->
-    <div id="scanner-modal" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80 p-4 hidden"><div class="bg-white rounded-lg p-4 w-full max-w-md"><h2 class="text-lg font-bold text-center mb-2">Scan Barcode</h2><div id="reader"></div><div id="scanner-status-message" class="text-center text-sm text-gray-600 mt-2 min-h-[20px]"></div></div><button id="stop-scanner-btn" class="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg font-semibold">Cancel</button></div>
-    <div id="product-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-md p-6 lg:p-8 transform scale-95"><h2 id="modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add New Product</h2><form id="product-form"><input type="hidden" id="product-id"><div class="mb-4"><label for="product-name" class="block text-sm font-medium text-gray-600 mb-1">Product Name</label><input type="text" id="product-name" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="mb-4"><label for="product-variant" class="block text-sm font-medium text-gray-600 mb-1">Variant (e.g., 200g)</label><input type="text" id="product-variant" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="mb-4"><label for="product-barcode" class="block text-sm font-medium text-gray-600 mb-1">Barcode</label><input type="text" id="product-barcode" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="mb-6"><label for="product-quantity" class="block text-sm font-medium text-gray-600 mb-1">Stock Quantity</label><input type="number" id="product-quantity" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="flex justify-end space-x-3"><button type="button" id="cancel-modal-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="submit" class="px-6 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition">Save Product</button></div></form></div></div>
-    <div id="delete-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-sm p-6 transform scale-95"><h2 class="text-xl font-bold text-gray-800">Confirm Deletion</h2><p id="delete-message" class="text-gray-600 my-4">Are you sure? This cannot be undone.</p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-delete-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="confirm-delete-btn" class="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition">Delete</button></div></div></div>
-    <div id="initial-stock-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-2xl transform scale-95"><div class="p-6 border-b"><h2 class="text-2xl font-bold text-gray-800">Set Initial Stock Levels</h2><p class="text-sm text-gray-500 mt-1">Enter the starting quantity for each product.</p></div><form id="initial-stock-form" class="max-h-[60vh] overflow-y-auto p-6"><div id="initial-stock-list" class="space-y-3"><div class="text-center text-gray-500 py-4">Loading products...</div></div></form><div class="flex justify-end space-x-3 p-6 bg-gray-50 rounded-b-xl border-t"><button type="button" id="cancel-initial-stock-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="save-initial-stock-btn" class="px-6 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition">Save All Quantities</button></div></div></div>
-    <div id="reset-modal" class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center opacity-0 pointer-events-none"><div class="modal-content bg-white rounded-xl shadow-2xl w-11/12 max-w-sm p-6 transform scale-95"><h2 class="text-xl font-bold text-gray-800">Confirm Reset</h2><p class="text-gray-600 my-4">Reset all quantities to zero? This cannot be undone.</p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-reset-btn" class="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition">Cancel</button><button type="button" id="confirm-reset-btn" class="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition">Yes, Reset All</button></div></div></div>
 
-    <script type="module">
-        // --- INITIAL PRODUCT DATA (NO PRICES) ---
-        const initialProducts = [ { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 }, { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 }, { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 }, { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 }, { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 }, { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 }, { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 }, { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 }, { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 }, { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 }, { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 }, { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 }, { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 }, { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 }, { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 }, { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 }, { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 }, { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 }, { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 }, { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 }, { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 }, { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 }, { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 }, { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 }, { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 }, { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 } ];
-        
-        // --- UI & STATE MANAGEMENT ---
-        const allUI = {};
-        ['inventory-table-container', 'sales-table-container', 'inventory-search', 'product-modal', 'product-form', 'modal-title', 'cancel-modal-btn', 'delete-modal', 'cancel-delete-btn', 'confirm-delete-btn', 'initial-stock-modal', 'initial-stock-list', 'cancel-initial-stock-btn', 'save-initial-stock-btn', 'reset-modal', 'cancel-reset-btn', 'confirm-reset-btn', 'add-new-product-btn', 'set-initial-stock-btn', 'reset-inventory-btn', 'scan-mode-add', 'scan-mode-sell', 'barcode-input', 'quantity-input', 'submit-scan', 'scan-status', 'scan-camera-btn', 'scanner-modal', 'stop-scanner-btn', 'scanner-status-message', 'export-data-btn', 'import-data-btn', 'import-file-input', 'transaction-list', 'confirm-transaction-btn', 'clear-transaction-btn', 'report-summary'].forEach(id => { allUI[id.replace(/-/g, '_')] = document.getElementById(id); });
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-md transform scale-95">
+            <h2 class="text-lg font-bold text-center mb-4">📷 Scan Barcode</h2>
+            <div id="reader"></div>
+            <div id="scanner-status" class="text-center text-sm text-gray-600 mt-3"></div>
+            <button id="close-scanner" class="w-full mt-4 bg-red-500 text-white py-3 rounded-lg">
+                ❌ Cancel
+            </button>
+        </div>
+    </div>
 
-        let html5QrCode, allProducts = [], allSales = [], currentTransaction = [], scanMode = 'add', itemToDeleteId = null;
+    <!-- Reset Confirmation Modal -->
+    <div id="reset-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-xl p-6 w-11/12 max-w-sm transform scale-95">
+            <h2 class="text-lg font-bold text-center mb-4">🔄 Reset Session</h2>
+            <p class="text-gray-600 mb-6 text-center">This will reset all inventory quantities to zero and clear today's sales. Continue?</p>
+            <div class="flex gap-3">
+                <button id="cancel-reset" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">Cancel</button>
+                <button id="confirm-reset" class="flex-1 bg-red-500 text-white py-3 rounded-lg">Reset</button>
+            </div>
+        </div>
+    </div>
 
-        // --- LOCAL DATA & STATE ---
-        function loadProducts() { const s = localStorage.getItem('inventoryApp_products'); allProducts = s ? JSON.parse(s) : JSON.parse(JSON.stringify(initialProducts)); saveProducts(); }
-        function saveProducts() { localStorage.setItem('inventoryApp_products', JSON.stringify(allProducts)); renderInventoryTable(allProducts); }
-        function loadSales() { const s = localStorage.getItem('inventoryApp_sales'); allSales = s ? JSON.parse(s) : []; saveSales(); }
-        function saveSales() { localStorage.setItem('inventoryApp_sales', JSON.stringify(allSales)); renderSalesTable(allSales); renderReport(); }
-        
-        // --- RENDER FUNCTIONS ---
-        function renderInventoryTable(p) { const term = allUI.inventory_search.value.toLowerCase(); const f = p.filter(i => i.name.toLowerCase().includes(term) || i.variant.toLowerCase().includes(term) || i.code.includes(term)).sort((a,b) => a.name.localeCompare(b.name)); allUI.inventory_table_container.innerHTML = f.length === 0 ? `<div class="p-8 text-center text-gray-500">No products found.</div>` : `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Product</th><th class="px-6 py-3">Barcode</th><th class="px-6 py-3 text-right">Stock</th><th class="px-6 py-3 text-center">Actions</th></tr></thead><tbody>${f.map(i => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${i.name} <span class="text-gray-500 text-xs">(${i.variant})</span></td><td class="px-6 py-4 font-mono">${i.code}</td><td class="px-6 py-4 text-right font-semibold ${i.quantity <= 5 ? 'text-red-500' : 'text-gray-800'}">${i.quantity}</td><td class="px-6 py-4 text-center"><button class="edit-btn font-medium text-amber-600 hover:underline" data-id="${i.id}">Edit</button><button class="delete-btn font-medium text-red-600 hover:underline ml-4" data-id="${i.id}">Delete</button></td></tr>`).join('')}</tbody></table>`; }
-        function renderSalesTable(s) { const sorted = s.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); allUI.sales_table_container.innerHTML = sorted.length === 0 ? `<div class="p-8 text-center text-gray-500">No sales recorded.</div>` : `<table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Date</th><th class="px-6 py-3">Product</th><th class="px-6 py-3 text-right">Units</th></tr></thead><tbody>${sorted.slice(0, 200).map(i => `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-6 py-4 font-medium text-gray-600">${new Date(i.timestamp).toLocaleString()}</td><td class="px-6 py-4 font-medium text-gray-900">${i.product.name} <span class="text-gray-500 text-xs">(${i.product.variant})</span></td><td class="px-6 py-4 text-right">${i.quantity}</td></tr>`).join('')}</tbody></table>`; }
-        function renderTransactionList() { allUI.confirm_transaction_btn.disabled = allUI.clear_transaction_btn.disabled = currentTransaction.length === 0; if (currentTransaction.length === 0) { allUI.transaction_list.innerHTML = `<p class="text-center text-gray-500 text-sm p-4">Scan items here.</p>`; return; } allUI.transaction_list.innerHTML = currentTransaction.map((i, idx) => `<div class="flex items-center justify-between p-2 bg-white border-b"><div class="flex-1 truncate"><span class="font-medium">${i.name}</span><span class="text-xs text-gray-500"> (${i.variant})</span></div><div class="text-center px-2"><span class="${i.type === 'add' ? 'text-green-600' : 'text-blue-600'} font-semibold">${i.type === 'add' ? '+' : '-'}${i.quantity}</span></div><button class="remove-from-transaction-btn text-red-500 hover:text-red-700 p-1" data-index="${idx}">&times;</button></div>`).join(''); document.querySelectorAll('.remove-from-transaction-btn').forEach(b => b.addEventListener('click', (e) => handleRemoveFromTransaction(e.currentTarget.dataset.index))); }
-        function renderReport() { const totalUnits = allSales.reduce((sum, item) => sum + item.quantity, 0); const uniqueItems = new Set(allSales.map(item => item.product.name + item.product.variant)).size; allUI.report_summary.innerHTML = `<div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Total Units Sold</p><p class="text-2xl font-bold">${totalUnits}</p></div><div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Unique Products Sold</p><p class="text-2xl font-bold">${uniqueItems}</p></div>`; }
-        
-        // --- MODAL & FORM HANDLING ---
-        function openGenericModal(m) { m.classList.remove('opacity-0', 'pointer-events-none'); m.querySelector('.modal-content').classList.remove('scale-95'); }
-        function closeGenericModal(m) { m.classList.add('opacity-0'); m.querySelector('.modal-content').classList.add('scale-95'); setTimeout(() => m.classList.add('pointer-events-none'), 300); }
-        function openModal(mode, p = null) { allUI.product_form.reset(); if (mode === 'add') { allUI.modal_title.textContent = 'Add New Product'; allUI.product_form['product-id'].value = ''; } else { allUI.modal_title.textContent = 'Edit Product'; allUI.product_form['product-id'].value = p.id; allUI.product_form['product-name'].value = p.name; allUI.product_form['product-variant'].value = p.variant; allUI.product_form['product-barcode'].value = p.code; allUI.product_form['product-quantity'].value = p.quantity; } openGenericModal(allUI.product_modal); }
-        function handleFormSubmit(e) { e.preventDefault(); const f = allUI.product_form, id = f['product-id'].value; const data = { name: f['product-name'].value, variant: f['product-variant'].value, code: f['product-barcode'].value, quantity: parseInt(f['product-quantity'].value) || 0 }; if (id) { const idx = allProducts.findIndex(p => p.id === id); if (idx > -1) allProducts[idx] = { ...allProducts[idx], ...data }; } else { data.id = 'prod-' + Date.now(); allProducts.push(data); } saveProducts(); closeGenericModal(allUI.product_modal); }
-        function handleDelete() { if (!itemToDeleteId) return; allProducts = allProducts.filter(p => p.id !== itemToDeleteId); saveProducts(); closeGenericModal(allUI.delete_modal); itemToDeleteId = null; }
-        
-        // --- TRANSACTION & SCANNER LOGIC ---
-        function handleScanSubmit() { const code = allUI.barcode_input.value.trim(); const qty = parseInt(allUI.quantity_input.value); if (!code || isNaN(qty) || qty <= 0) { showScanStatus('Invalid barcode or quantity.', 'error'); return; } const p = allProducts.find(i => i.code === code); if (!p) { showScanStatus('Product not found.', 'error'); return; } const existIdx = currentTransaction.findIndex(i => i.id === p.id && i.type === scanMode); if (existIdx > -1) { currentTransaction[existIdx].quantity += qty; } else { currentTransaction.push({ ...p, quantity: qty, type: scanMode }); } renderTransactionList(); showScanStatus(`Staged: ${p.name}`, 'success'); allUI.barcode_input.value = ''; allUI.quantity_input.value = '1'; allUI.barcode_input.focus(); }
-        function processTransaction() { if (currentTransaction.length === 0) return; currentTransaction.forEach(item => { const p = allProducts.find(i => i.id === item.id); if (!p) return; if (item.type === 'add') { p.quantity += item.quantity; } else { if (p.quantity >= item.quantity) { p.quantity -= item.quantity; allSales.push({ product: { name: p.name, variant: p.variant }, quantity: item.quantity, timestamp: new Date().toISOString() }); } } }); saveProducts(); saveSales(); currentTransaction = []; renderTransactionList(); showScanStatus('Transaction confirmed!', 'success'); }
-        function handleRemoveFromTransaction(idx) { currentTransaction.splice(idx, 1); renderTransactionList(); }
-        function showScanStatus(msg, type = 'info') { const el = allUI.scan_status; el.textContent = msg; el.className = 'mt-3 text-center text-sm min-h-[20px]'; if (type === 'success') el.classList.add('text-green-600'); else if (type === 'error') el.classList.add('text-red-600'); setTimeout(() => el.textContent = '', 3000); }
-        function startScanner() { allUI.scanner_modal.classList.remove('hidden'); allUI.scanner_status_message.textContent = "Requesting camera..."; const onSuccess = (text) => { stopScanner(); allUI.barcode_input.value = text; if(navigator.vibrate) navigator.vibrate(100); handleScanSubmit(); }; html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, onSuccess, ()=>{}) .catch(err => { let msg = "Could not start camera."; if (err.name === "NotAllowedError") msg = "Camera permission denied."; allUI.scanner_status_message.textContent = msg; }); }
-        function stopScanner() { if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().finally(() => allUI.scanner_modal.classList.add('hidden')); } else { allUI.scanner_modal.classList.add('hidden'); } }
-        
-        // --- OTHER FEATURES ---
-        function openInitialStockModal() { const sorted = [...allProducts].sort((a,b) => a.name.localeCompare(b.name)); allUI.initial_stock_list.innerHTML = sorted.map(p => `<div class="grid grid-cols-3 gap-3 items-center"><label class="col-span-2 text-sm font-medium text-gray-700 truncate">${p.name} (${p.variant})</label><input type="number" data-id="${p.id}" value="${p.quantity}" min="0" class="w-full p-2 border border-gray-300 rounded-md text-right"></div>`).join(''); openGenericModal(allUI.initial_stock_modal); }
-        function saveInitialStock() { allUI.initial_stock_list.querySelectorAll('input[type="number"]').forEach(i => { const p = allProducts.find(p => p.id === i.dataset.id); if (p) p.quantity = parseInt(i.value) || 0; }); saveProducts(); closeGenericModal(allUI.initial_stock_modal); }
-        function resetInventory() { allProducts.forEach(p => p.quantity = 0); saveProducts(); closeGenericModal(allUI.reset_modal); }
-        function exportData() { const filename = `inventory_session_${new Date().toISOString().split('T')[0]}.json`; const data = JSON.stringify({ products: allProducts, sales: allSales }, null, 2); const blob = new Blob([data], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href); }
-        function handleImport(e) { const f = e.target.files[0]; if (!f) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (data.products && data.sales) { allProducts = data.products; allSales = data.sales; saveProducts(); saveSales(); showScanStatus('Session imported!', 'success'); } else { showScanStatus('Invalid file.', 'error'); } } catch (err) { showScanStatus('Could not read file.', 'error'); } }; reader.readAsText(f); allUI.import_file_input.value = ''; }
+    <script>
+        // Initial product data
+        const initialProducts = [
+            { id: 'prod-01', name: 'Ajjwain', code: '102025052009', variant: '200g', quantity: 0 },
+            { id: 'prod-02', name: 'Ajjwain', code: '102025054508', variant: '450g', quantity: 0 },
+            { id: 'prod-03', name: 'Corriender', code: '102025112000', variant: '200g', quantity: 0 },
+            { id: 'prod-04', name: 'Corriender', code: '102025114509', variant: '450g', quantity: 0 },
+            { id: 'prod-05', name: 'Forest Mix', code: '102025022002', variant: '200g', quantity: 0 },
+            { id: 'prod-06', name: 'Forest Mix', code: '102025024501', variant: '450g', quantity: 0 },
+            { id: 'prod-07', name: 'Gift Box', code: '102025130011', variant: '4 pack', quantity: 0 },
+            { id: 'prod-08', name: 'Gift Box', code: '102025140010', variant: '8 pack', quantity: 0 },
+            { id: 'prod-09', name: 'Jamun', code: '102025032001', variant: '200g', quantity: 0 },
+            { id: 'prod-10', name: 'Jamun', code: '102025034500', variant: '450g', quantity: 0 },
+            { id: 'prod-11', name: 'Keshar Dry Fruits', code: '102025122009', variant: '200g', quantity: 0 },
+            { id: 'prod-12', name: 'Keshar Dry Fruits', code: '102025124508', variant: '450g', quantity: 0 },
+            { id: 'prod-13', name: 'Litchi', code: '102025102001', variant: '200g', quantity: 0 },
+            { id: 'prod-14', name: 'Litchi', code: '102025104500', variant: '450g', quantity: 0 },
+            { id: 'prod-15', name: 'Moringa', code: '102025062008', variant: '200g', quantity: 0 },
+            { id: 'prod-16', name: 'Moringa', code: '102025064507', variant: '450g', quantity: 0 },
+            { id: 'prod-17', name: 'Multiflora', code: '102025012003', variant: '200g', quantity: 0 },
+            { id: 'prod-18', name: 'Multiflora', code: '102025014502', variant: '400g', quantity: 0 },
+            { id: 'prod-19', name: 'Neem', code: '102025092005', variant: '200g', quantity: 0 },
+            { id: 'prod-20', name: 'Neem', code: '102025094504', variant: '450g', quantity: 0 },
+            { id: 'prod-21', name: 'Saunf', code: '102025072007', variant: '200g', quantity: 0 },
+            { id: 'prod-22', name: 'Saunf', code: '102025074506', variant: '450g', quantity: 0 },
+            { id: 'prod-23', name: 'Sunflower', code: '102025082006', variant: '200g', quantity: 0 },
+            { id: 'prod-24', name: 'Sunflower', code: '102025084505', variant: '450g', quantity: 0 },
+            { id: 'prod-25', name: 'Tulsi', code: '102025042000', variant: '200g', quantity: 0 },
+            { id: 'prod-26', name: 'Tulsi', code: '102025044509', variant: '450g', quantity: 0 }
+        ];
 
-        // --- INITIALIZATION & EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProducts();
-            loadSales();
-            renderTransactionList();
+        // App state
+        let products = [];
+        let sales = [];
+        let html5QrCode = null;
+        let currentScanner = null; // Track which input is being scanned for
+
+        // Load data from localStorage
+        function loadData() {
+            const savedProducts = localStorage.getItem('inventory_products');
+            const savedSales = localStorage.getItem('inventory_sales');
+            
+            products = savedProducts ? JSON.parse(savedProducts) : [...initialProducts];
+            sales = savedSales ? JSON.parse(savedSales) : [];
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('inventory_products', JSON.stringify(products));
+            localStorage.setItem('inventory_sales', JSON.stringify(sales));
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notification-text');
+            
+            text.textContent = message;
+            notification.className = `fixed top-0 left-0 right-0 z-50`;
+            
+            if (type === 'error') {
+                notification.querySelector('.notification').className = 'notification bg-red-500 text-white p-4 text-center';
+            } else {
+                notification.querySelector('.notification').className = 'notification bg-green-500 text-white p-4 text-center';
+            }
+            
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Tab switching
+        function initTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabName = btn.dataset.tab;
+                    
+                    // Update active tab
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Show/hide content
+                    tabContents.forEach(content => {
+                        if (content.id === `${tabName}-tab`) {
+                            content.classList.remove('hidden');
+                            if (tabName === 'reports') {
+                                updateReports();
+                            }
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+        }
+
+        // Scanner functionality
+        function initScanner() {
             html5QrCode = new Html5Qrcode("reader");
             
-            document.querySelectorAll('.nav-btn').forEach(b => { b.addEventListener('click', (e) => { const page = e.currentTarget.dataset.page; document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); e.currentTarget.classList.add('active'); document.querySelectorAll('.page-content').forEach(p => p.id === page ? p.classList.remove('hidden') : p.classList.add('hidden')); if (page === 'reports-page') renderReport(); }); });
-            allUI.add_new_product_btn.addEventListener('click', () => openModal('add'));
-            allUI.product_form.addEventListener('submit', handleFormSubmit);
-            allUI.confirm_delete_btn.addEventListener('click', handleDelete);
-            allUI.set_initial_stock_btn.addEventListener('click', openInitialStockModal);
-            allUI.save_initial_stock_btn.addEventListener('click', saveInitialStock);
-            allUI.reset_inventory_btn.addEventListener('click', () => openGenericModal(allUI.reset_modal));
-            allUI.confirm_reset_btn.addEventListener('click', resetInventory);
-            ['cancel_modal_btn', 'cancel_delete_btn', 'cancel_initial_stock_btn', 'cancel_reset_btn'].forEach(id => allUI[id].addEventListener('click', (e) => closeGenericModal(e.currentTarget.closest('.modal-backdrop'))));
-            allUI.inventory_table_container.addEventListener('click', (e) => { if (e.target.closest('.edit-btn')) { const p = allProducts.find(p => p.id === e.target.closest('.edit-btn').dataset.id); if(p) openModal('edit', p); } if (e.target.closest('.delete-btn')) { openDeleteModal(e.target.closest('.delete-btn').dataset.id); } });
-            allUI.inventory_search.addEventListener('input', () => renderInventoryTable(allProducts));
-            allUI.scan_mode_add.addEventListener('click', () => { scanMode = 'add'; allUI.scan_mode_add.classList.add('bg-white', 'text-amber-600', 'shadow'); allUI.scan_mode_sell.classList.remove('bg-white', 'text-blue-600', 'shadow'); allUI.submit_scan.classList.replace('bg-blue-500', 'bg-amber-500'); });
-            allUI.scan_mode_sell.addEventListener('click', () => { scanMode = 'sell'; allUI.scan_mode_sell.classList.add('bg-white', 'text-blue-600', 'shadow'); allUI.scan_mode_add.classList.remove('bg-white', 'text-amber-600', 'shadow'); allUI.submit_scan.classList.replace('bg-amber-500', 'bg-blue-500'); });
-            allUI.submit_scan.addEventListener('click', handleScanSubmit);
-            allUI.barcode_input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleScanSubmit(); });
-            allUI.scan_camera_btn.addEventListener('click', startScanner);
-            allUI.stop_scanner_btn.addEventListener('click', stopScanner);
-            allUI.export_data_btn.addEventListener('click', exportData);
-            allUI.import_data_btn.addEventListener('click', () => allUI.import_file_input.click());
-            allUI.import_file_input.addEventListener('change', handleImport);
-            allUI.confirm_transaction_btn.addEventListener('click', processTransaction);
-            allUI.clear_transaction_btn.addEventListener('click', () => { currentTransaction = []; renderTransactionList(); });
+            // Sales scanner
+            document.getElementById('scan-btn').addEventListener('click', () => {
+                currentScanner = 'sales';
+                openScanner();
+            });
+            
+            // Inventory scanner
+            document.getElementById('inv-scan-btn').addEventListener('click', () => {
+                currentScanner = 'inventory';
+                openScanner();
+            });
+            
+            // Close scanner
+            document.getElementById('close-scanner').addEventListener('click', closeScanner);
+        }
+
+        function openScanner() {
+            const modal = document.getElementById('scanner-modal');
+            const status = document.getElementById('scanner-status');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+            
+            status.textContent = 'Starting camera...';
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    if (currentScanner === 'sales') {
+                        document.getElementById('barcode-input').value = decodedText;
+                    } else {
+                        document.getElementById('inv-barcode').value = decodedText;
+                    }
+                    closeScanner();
+                    if (navigator.vibrate) navigator.vibrate(100);
+                },
+                () => {} // Error callback (ignore)
+            ).catch(err => {
+                status.textContent = 'Camera access denied or not available';
+            });
+        }
+
+        function closeScanner() {
+            const modal = document.getElementById('scanner-modal');
+            
+            if (html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    modal.classList.add('opacity-0', 'pointer-events-none');
+                    modal.querySelector('.modal-content').classList.add('scale-95');
+                });
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('.modal-content').classList.add('scale-95');
+            }
+        }
+
+        // Sales functionality
+        function initSales() {
+            document.getElementById('record-sale-btn').addEventListener('click', recordSale);
+            document.getElementById('barcode-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') recordSale();
+            });
+        }
+
+        function recordSale() {
+            const barcode = document.getElementById('barcode-input').value.trim();
+            const quantity = parseInt(document.getElementById('quantity-input').value);
+            
+            if (!barcode || quantity <= 0) {
+                showNotification('Please enter a valid barcode and quantity', 'error');
+                return;
+            }
+            
+            const product = products.find(p => p.code === barcode);
+            if (!product) {
+                showNotification('Product not found', 'error');
+                return;
+            }
+            
+            if (product.quantity < quantity) {
+                showNotification('Insufficient stock', 'error');
+                return;
+            }
+            
+            // Update stock
+            product.quantity -= quantity;
+            
+            // Record sale
+            sales.push({
+                id: Date.now(),
+                productId: product.id,
+                productName: product.name,
+                productVariant: product.variant,
+                quantity: quantity,
+                timestamp: new Date().toISOString()
+            });
+            
+            saveData();
+            updateInventoryDisplay();
+            updateTodaysSales();
+            
+            showNotification(`Sold ${quantity}x ${product.name} (${product.variant})`);
+            
+            // Clear form
+            document.getElementById('barcode-input').value = '';
+            document.getElementById('quantity-input').value = '1';
+        }
+
+        function updateTodaysSales() {
+            const container = document.getElementById('today-sales');
+            const today = new Date().toDateString();
+            const todaySales = sales.filter(s => new Date(s.timestamp).toDateString() === today);
+            
+            if (todaySales.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No sales recorded yet</p>';
+                return;
+            }
+            
+            container.innerHTML = todaySales.slice(-10).reverse().map(sale => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium">${sale.productName}</div>
+                        <div class="text-sm text-gray-500">${sale.productVariant}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold">${sale.quantity}</div>
+                        <div class="text-xs text-gray-500">${new Date(sale.timestamp).toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Inventory functionality
+        function initInventory() {
+            document.getElementById('add-stock-btn').addEventListener('click', addStock);
+            document.getElementById('inv-barcode').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addStock();
+            });
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                document.getElementById('reset-modal').classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('reset-modal').querySelector('.modal-content').classList.remove('scale-95');
+            });
+            
+            // Reset modal handlers
+            document.getElementById('cancel-reset').addEventListener('click', closeResetModal);
+            document.getElementById('confirm-reset').addEventListener('click', resetInventory);
+        }
+
+        function addStock() {
+            const barcode = document.getElementById('inv-barcode').value.trim();
+            const quantity = parseInt(document.getElementById('inv-quantity').value);
+            
+            if (!barcode || quantity <= 0) {
+                showNotification('Please enter a valid barcode and quantity', 'error');
+                return;
+            }
+            
+            const product = products.find(p => p.code === barcode);
+            if (!product) {
+                showNotification('Product not found', 'error');
+                return;
+            }
+            
+            product.quantity += quantity;
+            saveData();
+            updateInventoryDisplay();
+            
+            showNotification(`Added ${quantity}x ${product.name} (${product.variant}) to inventory`);
+            
+            // Clear form
+            document.getElementById('inv-barcode').value = '';
+            document.getElementById('inv-quantity').value = '1';
+        }
+
+        function updateInventoryDisplay() {
+            const tbody = document.getElementById('inventory-list');
+            
+            tbody.innerHTML = products.map(product => {
+                const soldToday = sales
+                    .filter(s => s.productId === product.id && 
+                            new Date(s.timestamp).toDateString() === new Date().toDateString())
+                    .reduce((sum, s) => sum + s.quantity, 0);
+                
+                return `
+                    <tr class="${product.quantity <= 5 ? 'bg-red-50' : 'bg-white'} border-b">
+                        <td class="px-4 py-3">
+                            <div class="font-medium">${product.name}</div>
+                            <div class="text-sm text-gray-500">${product.variant}</div>
+                        </td>
+                        <td class="px-4 py-3 font-mono text-sm">${product.code}</td>
+                        <td class="px-4 py-3 text-right font-semibold ${product.quantity <= 5 ? 'text-red-600' : 'text-gray-900'}">
+                            ${product.quantity}
+                        </td>
+                        <td class="px-4 py-3 text-right text-blue-600 font-medium">${soldToday}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+
+        function resetInventory() {
+            products.forEach(p => p.quantity = 0);
+            sales.length = 0;
+            saveData();
+            updateInventoryDisplay();
+            updateTodaysSales();
+            updateReports();
+            closeResetModal();
+            showNotification('Inventory reset successfully');
+        }
+
+        // Reports functionality
+        function updateReports() {
+            const totalSales = sales.reduce((sum, s) => sum + s.quantity, 0);
+            const totalProducts = products.filter(p => p.quantity > 0).length;
+            const lowStock = products.filter(p => p.quantity <= 5 && p.quantity > 0).length;
+            
+            document.getElementById('total-sales').textContent = totalSales;
+            document.getElementById('total-products').textContent = totalProducts;
+            document.getElementById('low-stock').textContent = lowStock;
+            
+            updateSalesReport();
+        }
+
+        function updateSalesReport() {
+            const container = document.getElementById('sales-report');
+            
+            if (sales.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No sales data available</p>';
+                return;
+            }
+            
+            const sortedSales = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            container.innerHTML = `
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Date/Time</th>
+                            <th class="px-4 py-3 text-left">Product</th>
+                            <th class="px-4 py-3 text-right">Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedSales.slice(0, 100).map(sale => `
+                            <tr class="border-b">
+                                <td class="px-4 py-3 text-gray-600">
+                                    ${new Date(sale.timestamp).toLocaleDateString()}<br>
+                                    <span class="text-xs">${new Date(sale.timestamp).toLocaleTimeString()}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="font-medium">${sale.productName}</div>
+                                    <div class="text-xs text-gray-500">${sale.productVariant}</div>
+                                </td>
+                                <td class="px-4 py-3 text-right font-semibold">${sale.quantity}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Data export/import
+        function initDataManagement() {
+            document.getElementById('export-btn').addEventListener('click', exportData);
+            document.getElementById('import-btn').addEventListener('click', () => {
+                document.getElementById('import-file').click();
+            });
+            document.getElementById('import-file').addEventListener('change', importData);
+        }
+
+        function exportData() {
+            const data = {
+                products: products,
+                sales: sales,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventory-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.products && data.sales) {
+                        products = data.products;
+                        sales = data.sales;
+                        saveData();
+                        updateInventoryDisplay();
+                        updateTodaysSales();
+                        updateReports();
+                        showNotification('Data imported successfully');
+                    } else {
+                        showNotification('Invalid file format', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error reading file', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset file input
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initTabs();
+            initScanner();
+            initSales();
+            initInventory();
+            initDataManagement();
+            
+            updateInventoryDisplay();
+            updateTodaysSales();
+            updateReports();
         });
     </script>
 </body>
