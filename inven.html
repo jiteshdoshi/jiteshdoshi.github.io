@@ -309,7 +309,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
 
                             <button id="manual-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
-                                � Manual Sync
+                                🔄 Manual Sync
                             </button>
                         </div>
                         
@@ -1192,6 +1192,18 @@
             });
             document.getElementById('import-file').addEventListener('change', importData);
             
+            // Manual sync button
+            document.getElementById('manual-sync-btn').addEventListener('click', async () => {
+                updateConnectionStatus('Manual sync in progress...', 'yellow');
+                try {
+                    await syncToFirebase();
+                    await syncFromFirebase();
+                    showNotification('Manual sync completed successfully');
+                } catch (error) {
+                    showNotification('Manual sync failed: ' + error.message, 'error');
+                }
+            });
+            
             // Update device info display
             updateDeviceInfo();
             
@@ -1216,18 +1228,21 @@
 
         function mergeSyncData(syncData) {
             const currentTime = new Date().toISOString();
+            let hasChanges = false;
             
-            // Merge products (update quantities, don't duplicate)
+            // Merge products (take the newer timestamp data)
             syncData.products.forEach(syncProduct => {
                 const existingProduct = products.find(p => p.id === syncProduct.id);
                 if (existingProduct) {
-                    // Take the higher quantity (assume most recent is correct)
-                    if (syncData.lastSync > (lastSyncTime || '2000-01-01')) {
+                    // Update if sync data is newer or quantities differ
+                    if (existingProduct.quantity !== syncProduct.quantity) {
                         existingProduct.quantity = syncProduct.quantity;
+                        hasChanges = true;
                     }
                 } else {
                     // Add new product
                     products.push(syncProduct);
+                    hasChanges = true;
                 }
             });
             
@@ -1242,22 +1257,27 @@
                 
                 if (!exists) {
                     sales.push(syncSale);
+                    hasChanges = true;
                 }
             });
             
             // Sort sales by timestamp
             sales.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             
-            // Update last sync time
-            lastSyncTime = currentTime;
-            localStorage.setItem('lastSyncTime', currentTime);
-            
-            // Save merged data
-            saveData();
-            updateInventoryDisplay();
-            updateTodaysSales();
-            updateReports();
-            updateDeviceInfo();
+            // Update last sync time and save only if there were changes
+            if (hasChanges) {
+                lastSyncTime = currentTime;
+                localStorage.setItem('lastSyncTime', currentTime);
+                
+                // Save merged data
+                saveData();
+                updateInventoryDisplay();
+                updateTodaysSales();
+                updateReports();
+                updateDeviceInfo();
+                
+                console.log('Data merged and UI updated from remote sync');
+            }
         }
 
         // Firebase sync functions
@@ -1333,15 +1353,20 @@
                 window.firebaseOnValue(dataRef, (snapshot) => {
                     if (snapshot.exists()) {
                         const data = snapshot.val();
-                        // Only sync if it's from another device
+                        // Only sync if it's from another device and newer than our last sync
                         if (data.deviceId !== deviceId) {
+                            console.log('Received real-time update from device:', data.deviceId);
                             mergeSyncData(data);
                             showNotification(`Data synced from device: ${data.deviceId.substring(0, 8)}...`);
                         }
                     }
+                }, (error) => {
+                    console.error('Real-time sync listener error:', error);
+                    updateConnectionStatus('Real-time sync failed', 'red');
                 });
                 
-                updateConnectionStatus('Auto-sync enabled', 'green');
+                updateConnectionStatus('Real-time sync active', 'green');
+                console.log('Real-time sync listener established for session:', sessionId);
             } catch (error) {
                 console.error('Real-time sync setup failed:', error);
                 updateConnectionStatus('Real-time sync failed', 'red');
