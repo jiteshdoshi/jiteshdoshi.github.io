@@ -583,7 +583,7 @@
                 };
                 const { error } = await window.supabaseClient
                     .from('inventory_sessions')
-                    .upsert([syncData], { onConflict: 'session_id', returning: 'minimal' });
+                    .upsert([syncData], { onConflict: 'session_id' });
                 if (error) {
                     updateSyncStatus('Failed to create session in cloud', 'red');
                     showNotification('Cloud session creation failed: ' + error.message, 'error');
@@ -655,7 +655,7 @@
                 </table>`;
         }
 
-        // --- Data Management & Firebase Sync ---
+        // --- Data Management & Supabase Sync ---
         function initDataManagement() {
             document.getElementById('export-btn').addEventListener('click', exportData);
             document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
@@ -671,8 +671,42 @@
             if (el) el.innerHTML = `Session: ${sessionId ? sessionId.substring(8, 20) : 'N/A'}<br>Last Sync: ${lastSyncTime ? new Date(lastSyncTime).toLocaleString() : 'Never'}`;
         }
         
-        function exportData() { /* ... implementation unchanged ... */ }
-        function importData(event) { /* ... implementation unchanged ... */ }
+        function exportData() {
+            const dataStr = JSON.stringify({ products, sales, deviceId, sessionId }, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `inventory-backup-${sessionId.substring(8,15)}-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('Backup exported successfully.');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.products && data.sales && data.sessionId) {
+                        products = data.products;
+                        sales = data.sales;
+                        sessionId = data.sessionId;
+                        localStorage.setItem('sessionId', sessionId);
+                        saveData();
+                        refreshAllUI();
+                        showNotification('Backup imported successfully. Sync to apply changes to cloud.');
+                    } else {
+                        showNotification('Invalid backup file format.', 'error');
+                    }
+                } catch (err) {
+                    showNotification('Error reading backup file.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
 
         // --- Supabase Sync Logic ---
         
@@ -701,175 +735,134 @@
             }
         }
 
-        // Sync to Supabase
-        async function syncToSupabase() {
-            try {
-                updateSyncStatus('Syncing to cloud...', 'yellow');
-                
-                const syncData = {
-                    session_id: sessionId,
-                    device_id: deviceId,
-                    products: products || [],
-                    sales: sales || [],
-                    last_updated: new Date().toISOString()
-                };
-                
-                console.log('Syncing to Supabase:', syncData);
-                
-                // Upsert data to Supabase
-                const { data, error } = await window.supabaseClient
-                    .from('inventory_sessions')
-                    .upsert([syncData], { 
-                        onConflict: 'session_id',
-                        returning: 'minimal'
-                    });
-                
-                if (error) {
-                    throw error;
-                }
-                
-                console.log('✅ Sync to Supabase successful');
-                updateSyncStatus('Data synced successfully', 'green');
-                showNotification('Data synced to cloud');
-                
-            } catch (error) {
-                console.error('❌ Supabase sync error:', error);
-                updateSyncStatus(`Sync failed: ${error.message}`, 'red');
-                showNotification('Sync failed: ' + error.message, 'error');
-            }
-        }
-
-        // Sync from Supabase
-        async function syncFromSupabase() {
-            try {
-                updateSyncStatus('Getting data from cloud...', 'yellow');
-                
-                console.log('Fetching from Supabase for session:', sessionId);
-                
-                const { data, error } = await window.supabaseClient
-                    .from('inventory_sessions')
-                    .select('*')
-                    .eq('session_id', sessionId)
-                    .single();
-                
-                if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-                    throw error;
-                }
-                
-                if (data) {
-                    console.log('✅ Data received from Supabase:', data);
-                    mergeSyncData(data);
-                    updateSyncStatus('Data loaded from cloud', 'green');
-                } else {
-                    console.log('📂 No existing data for this session');
-                    updateSyncStatus('Ready for first sync', 'default');
-                }
-                
-            } catch (error) {
-                console.error('❌ Supabase read error:', error);
-                updateSyncStatus(`Failed to load data: ${error.message}`, 'red');
-                showNotification('Failed to load data: ' + error.message, 'error');
-            }
-        }
-        
-        // Manual sync function (triggered by sync button)
+        /**
+         * Main function to perform a manual sync with Supabase.
+         * It fetches remote data, merges it with local data, and pushes the result back.
+         */
         async function performManualSync() {
+            const syncIcon = document.getElementById('sync-icon');
+            const syncBtn = document.getElementById('sync-btn');
+
             try {
-                // Start sync animation
-                const syncIcon = document.getElementById('sync-icon');
-                const syncBtn = document.getElementById('sync-btn');
                 if (syncIcon && syncBtn) {
                     syncIcon.style.animation = 'spin 1s linear infinite';
                     syncBtn.disabled = true;
                 }
 
-                // 1. Get cloud data for current session
-                updateSyncStatus('Getting data from cloud...', 'yellow');
+                updateSyncStatus('1. Fetching latest data...', 'yellow');
+                
+                // Step 1: Fetch the latest data from the cloud for the current session.
                 const { data: remoteData, error: fetchError } = await window.supabaseClient
                     .from('inventory_sessions')
-                    .select('*')
+                    .select('products, sales, last_updated')
                     .eq('session_id', sessionId)
                     .single();
+
+                // PGRST116 means no row was found, which is fine for a first sync. Any other error is a failure.
                 if (fetchError && fetchError.code !== 'PGRST116') {
-                    updateSyncStatus('Failed to load data: ' + fetchError.message, 'red');
-                    showNotification('Failed to load data: ' + fetchError.message, 'error');
-                    return;
+                    throw new Error(fetchError.message);
                 }
 
-                // 2. Merge cloud and local data
+                // Step 2: Merge the cloud data with local data.
+                updateSyncStatus('2. Merging local and cloud data...', 'yellow');
                 if (remoteData) {
-                    mergeSyncData(remoteData);
+                    // If remote data exists, perform a full merge and recalculation.
+                    mergeAndRecalculate(remoteData);
                 }
+                // If no remote data exists, our local data is the source of truth, so we just proceed to upload it.
 
-                // 3. Sync merged data back to cloud
-                updateSyncStatus('Syncing to cloud...', 'yellow');
+                // Step 3: Sync the newly merged and calculated data back to the cloud.
+                updateSyncStatus('3. Syncing merged data to cloud...', 'yellow');
                 const syncData = {
                     session_id: sessionId,
                     device_id: deviceId,
-                    products: products || [],
-                    sales: sales || [],
+                    products: products,
+                    sales: sales,
                     last_updated: new Date().toISOString()
                 };
+
                 const { error: upsertError } = await window.supabaseClient
                     .from('inventory_sessions')
-                    .upsert([syncData], { onConflict: 'session_id', returning: 'minimal' });
+                    .upsert([syncData], { onConflict: 'session_id' });
+
                 if (upsertError) {
-                    updateSyncStatus('Sync failed: ' + upsertError.message, 'red');
-                    showNotification('Sync failed: ' + upsertError.message, 'error');
-                } else {
-                    updateSyncStatus('Data synced successfully', 'green');
-                    showNotification('Data synced to cloud');
+                    throw new Error(upsertError.message);
                 }
 
-                // 4. Refresh UI to reflect merged data
+                // Step 4: Finalize by saving the merged data locally and updating the UI.
+                saveData(); 
                 refreshAllUI();
+                updateSyncStatus('Sync complete!', 'green');
+                showNotification('Data successfully synced with the cloud.');
 
+            } catch (error) {
+                console.error('❌ Manual sync failed:', error);
+                updateSyncStatus(`Sync failed: ${error.message}`, 'red');
+                showNotification('Sync failed: ' + error.message, 'error');
             } finally {
-                // Stop sync animation
-                const syncIcon = document.getElementById('sync-icon');
-                const syncBtn = document.getElementById('sync-btn');
                 if (syncIcon && syncBtn) {
                     syncIcon.style.animation = '';
                     syncBtn.disabled = false;
                 }
             }
         }
-        
-        function mergeSyncData(remoteData) {
-            console.log('🔄 Merging remote data into local state');
-            let hasChanges = false;
-            
-            // Merge products: Remote data is the source of truth for quantity
-            if (remoteData.products && Array.isArray(remoteData.products)) {
-                remoteData.products.forEach(remoteProduct => {
-                    const localProduct = products.find(p => p.id === remoteProduct.id);
-                    if (localProduct && localProduct.quantity !== remoteProduct.quantity) {
-                        console.log(`📦 Updating ${localProduct.name} from ${localProduct.quantity} to ${remoteProduct.quantity}`);
-                        localProduct.quantity = remoteProduct.quantity;
-                        hasChanges = true;
-                    }
-                });
-            }
-            
-            // Merge sales: Add any sales from remote that we don't have locally
-            if (remoteData.sales && Array.isArray(remoteData.sales)) {
-                 remoteData.sales.forEach(remoteSale => {
-                    if (!sales.some(localSale => localSale.id === remoteSale.id)) {
-                        console.log('💰 Adding new sale from remote:', remoteSale);
-                        sales.push(remoteSale);
-                        hasChanges = true;
-                    }
-                });
-            }
 
-            if (hasChanges) {
-                console.log('✅ Remote data merged, updating UI');
-                saveData();
-                refreshAllUI();
-                showNotification('Data updated from cloud');
-            } else {
-                 console.log('ℹ️ No new changes from remote data');
+        /**
+         * Merges remote data with local data and recalculates the final state.
+         * This function is the core of the sync logic.
+         * @param {object} remoteData - The data object fetched from Supabase.
+         */
+        function mergeAndRecalculate(remoteData) {
+            console.log('🔄 Merging data. Cloud is the source of truth for the base state.');
+
+            const localProducts = JSON.parse(JSON.stringify(products)); // Deep copy for safety
+            const localSales = JSON.parse(JSON.stringify(sales));
+            
+            // --- Step 1: Merge Sales ---
+            // Create a definitive list of all sales from both local and remote, removing duplicates.
+            const combinedSalesMap = new Map();
+            localSales.forEach(sale => combinedSalesMap.set(sale.id, sale));
+            if (remoteData.sales && Array.isArray(remoteData.sales)) {
+              remoteData.sales.forEach(sale => combinedSalesMap.set(sale.id, sale));
             }
+            const finalSales = Array.from(combinedSalesMap.values());
+
+            // --- Step 2: Merge and Recalculate Inventory ---
+            // For each product, determine the true stock level by reconciling additions and sales.
+            const finalProducts = JSON.parse(JSON.stringify(initialProducts)).map(initialProd => {
+                const localProduct = localProducts.find(p => p.id === initialProd.id) || { ...initialProd };
+                const remoteProduct = (remoteData.products || []).find(p => p.id === initialProd.id) || { ...initialProd };
+
+                // Calculate total sales for this product from the original local and remote lists.
+                const localSalesForProduct = localSales.filter(s => s.productId === initialProd.id).reduce((sum, s) => sum + s.quantity, 0);
+                const remoteSalesForProduct = (remoteData.sales || []).filter(s => s.productId === initialProd.id).reduce((sum, s) => sum + s.quantity, 0);
+
+                // Infer the total number of items ever *added* to the inventory.
+                // Since additions are not logged, we infer them from (current stock + total sales).
+                const inferredLocalAdditions = localProduct.quantity + localSalesForProduct;
+                const inferredRemoteAdditions = remoteProduct.quantity + remoteSalesForProduct;
+
+                // The true total of additions is the maximum found on any device.
+                // This correctly handles cases where one device added stock and hasn't synced yet.
+                const finalTotalAdditions = Math.max(inferredLocalAdditions, inferredRemoteAdditions);
+
+                // Calculate total sales from our new, definitive combined sales list.
+                const finalSalesForProduct = finalSales.filter(s => s.productId === initialProd.id).reduce((sum, s) => sum + s.quantity, 0);
+
+                // The final quantity is the total items added minus the total items sold.
+                const finalQuantity = finalTotalAdditions - finalSalesForProduct;
+
+                return {
+                    ...initialProd,
+                    quantity: Math.max(0, finalQuantity) // Ensure quantity doesn't go below zero.
+                };
+            });
+            
+            // --- Step 3: Update the global state variables with the merged and calculated data ---
+            products = finalProducts;
+            sales = finalSales;
+            
+            console.log('✅ Merge complete. New state calculated.');
         }
         
         // --- App Startup ---
@@ -896,4 +889,3 @@
     </script>
 </body>
 </html>
-
