@@ -10,28 +10,34 @@
     
     <!-- Firebase SDK -->
     <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCe6xHdmOsvS0Sd9-g4LfeTtzTagXIbocU",
+            authDomain: "ths-imanage.firebaseapp.com",
+            databaseURL: "https://ths-imanage-default-rtdb.firebaseio.com",
+            projectId: "ths-imanage",
+            storageBucket: "ths-imanage.firebasestorage.app",
+            messagingSenderId: "419761456395",
+            appId: "1:419761456395:web:df1dd3348cf43e84a88e0e",
+            measurementId: "G-2FCPZ9NLP5"
+        };
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCe6xHdmOsvS0Sd9-g4LfeTtzTagXIbocU",
-    authDomain: "ths-imanage.firebaseapp.com",
-    projectId: "ths-imanage",
-    storageBucket: "ths-imanage.firebasestorage.app",
-    messagingSenderId: "419761456395",
-    appId: "1:419761456395:web:df1dd3348cf43e84a88e0e",
-    measurementId: "G-2FCPZ9NLP5"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // Make Firebase functions available globally
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebaseOnValue = onValue;
+        window.serverTimestamp = serverTimestamp;
+        window.firebaseReady = true;
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -291,7 +297,7 @@
 
                     <!-- Export/Import -->
                     <div class="card p-6">
-                        <h3 class="text-lg font-semibold mb-4">💾 Data Management & Sync</h3>
+                        <h3 class="text-lg font-semibold mb-4">💾 Session Management</h3>
                         
                         <!-- Device Info -->
                         <div class="mb-4 p-3 bg-gray-50 rounded-lg">
@@ -299,32 +305,21 @@
                             <div class="text-xs text-gray-500" id="device-info">Loading...</div>
                         </div>
                         
-                        <!-- Sync Options -->
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <button id="real-time-sync-btn" class="btn-success text-white py-3 px-4 rounded-lg text-sm">
-                                🔄 Real-Time Sync
-                            </button>
+
                             <button id="manual-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
                                 � Manual Sync
                             </button>
                         </div>
                         
-                        <!-- Connection Status -->
-                        <div id="connection-status" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg hidden">
-                            <div class="text-sm font-medium text-yellow-800">Connection Status</div>
-                            <div class="text-xs text-yellow-700" id="connection-info">Disconnected</div>
+                        <!-- Firebase Status -->
+                        <div id="connection-status" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="text-sm font-medium text-green-800">🔥 Firebase Status</div>
+                            <div class="text-xs text-green-700" id="connection-info">Auto-sync enabled</div>
                         </div>
                         
-                        <!-- Fallback Sync Options -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <button id="export-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
-                                📤 Export for Sync
-                            </button>
-                            <button id="import-sync-btn" class="btn-primary text-white py-3 px-4 rounded-lg text-sm">
-                                📥 Import & Merge
-                            </button>
-                        </div>
-                        
+
                         <!-- Regular Export/Import -->
                         <div class="flex flex-col sm:flex-row gap-4">
                             <button id="export-btn" class="btn-primary text-white py-3 px-6 rounded-lg">
@@ -334,18 +329,16 @@
                                 📥 Import Backup
                             </button>
                             <input type="file" id="import-file" class="hidden" accept=".json">
-                            <input type="file" id="import-sync-file" class="hidden" accept=".json">
                         </div>
                         
-                        <!-- Sync Instructions -->
+                        <!-- Firebase Info -->
                         <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div class="text-sm font-medium text-blue-800">📋 Firebase Sync Instructions:</div>
-                            <ol class="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
-                                <li><strong>Setup:</strong> Add your Firebase config above</li>
-                                <li><strong>Real-Time:</strong> Enable automatic syncing across all devices</li>
-                                <li><strong>Manual:</strong> Click "Manual Sync" to sync on demand</li>
-                                <li><strong>Fallback:</strong> Use Export/Import if Firebase fails</li>
-                            </ol>
+                            <div class="text-sm font-medium text-blue-800">� Auto-Sync Active</div>
+                            <div class="text-xs text-blue-700 mt-1">
+                                • Data automatically syncs across all devices<br>
+                                • New session starts when inventory is reset<br>
+                                • Changes are instantly shared in real-time
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -439,17 +432,33 @@
         let lastSyncTime = null; // Track last sync
         
         // Firebase sync variables
-        let isRealTimeSyncEnabled = false;
-        let syncInterval = null;
+        let sessionId = null; // Unique session identifier
 
-        // Initialize device ID
+        // Initialize device ID and session
         function initDeviceId() {
             deviceId = localStorage.getItem('deviceId');
             if (!deviceId) {
                 deviceId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('deviceId', deviceId);
             }
+            
+            // Generate new session ID or get existing one
+            sessionId = localStorage.getItem('sessionId');
+            if (!sessionId) {
+                sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('sessionId', sessionId);
+            }
+            
             lastSyncTime = localStorage.getItem('lastSyncTime');
+        }
+
+        // Generate new session (called when inventory is reset)
+        function generateNewSession() {
+            sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('sessionId', sessionId);
+            updateDeviceInfo();
+            // Sync new session immediately
+            syncToFirebase();
         }
 
         // Load data from localStorage
@@ -1117,7 +1126,11 @@
             updateInventoryStaging();
             updateReports();
             closeResetModal();
-            showNotification('Inventory reset successfully');
+            
+            // Generate new session and sync
+            generateNewSession();
+            
+            showNotification('New session started - inventory reset successfully');
         }
 
         // Reports functionality
@@ -1171,23 +1184,22 @@
             `;
         }
 
-        // Data export/import with enhanced sync
+        // Data export/import with automatic Firebase sync
         function initDataManagement() {
             document.getElementById('export-btn').addEventListener('click', exportData);
-            document.getElementById('export-sync-btn').addEventListener('click', exportSyncData);
-            document.getElementById('real-time-sync-btn').addEventListener('click', toggleRealTimeSync);
-            document.getElementById('manual-sync-btn').addEventListener('click', manualSync);
             document.getElementById('import-btn').addEventListener('click', () => {
                 document.getElementById('import-file').click();
             });
-            document.getElementById('import-sync-btn').addEventListener('click', () => {
-                document.getElementById('import-sync-file').click();
-            });
             document.getElementById('import-file').addEventListener('change', importData);
-            document.getElementById('import-sync-file').addEventListener('change', importSyncData);
             
             // Update device info display
             updateDeviceInfo();
+            
+            // Auto-start Firebase sync
+            setTimeout(() => {
+                setupRealTimeSync();
+                syncFromFirebase();
+            }, 1000);
         }
 
         function updateDeviceInfo() {
@@ -1196,58 +1208,10 @@
                 const deviceName = localStorage.getItem('deviceName') || 'Unnamed Device';
                 deviceInfo.innerHTML = `
                     Device: ${deviceName}<br>
-                    ID: ${deviceId}<br>
+                    Session: ${sessionId ? sessionId.substring(0, 12) + '...' : 'Loading...'}<br>
                     Last Sync: ${lastSyncTime ? new Date(lastSyncTime).toLocaleString() : 'Never'}
                 `;
             }
-        }
-
-        function exportSyncData() {
-            const syncData = generateSyncData();
-            const filename = `inventory-sync-${deviceId}-${new Date().toISOString().split('T')[0]}.json`;
-            
-            const blob = new Blob([JSON.stringify(syncData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification('Sync file exported successfully');
-            updateSyncStatus('Exported for sync');
-        }
-
-        function importSyncData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const syncData = JSON.parse(e.target.result);
-                    if (validateSyncData(syncData)) {
-                        mergeSyncData(syncData);
-                        showNotification('Data synced successfully');
-                        updateSyncStatus('Synced from ' + (syncData.deviceName || 'other device'));
-                    } else {
-                        showNotification('Invalid sync file format', 'error');
-                    }
-                } catch (error) {
-                    showNotification('Error reading sync file', 'error');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; // Reset file input
-        }
-
-        function validateSyncData(data) {
-            return data && 
-                   data.version && 
-                   Array.isArray(data.products) && 
-                   Array.isArray(data.sales) && 
-                   data.deviceId && 
-                   data.lastSync;
         }
 
         function mergeSyncData(syncData) {
@@ -1317,16 +1281,17 @@
                 await waitForFirebase();
                 updateConnectionStatus('Syncing to Firebase...', 'yellow');
                 
-                const dataRef = window.firebaseRef(window.firebaseDB, 'inventoryData');
+                const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
                 await window.firebaseSet(dataRef, {
                     products: products,
                     sales: sales,
                     deviceId: deviceId,
+                    sessionId: sessionId,
                     lastUpdated: window.serverTimestamp(),
                     timestamp: new Date().toISOString()
                 });
                 
-                updateConnectionStatus('Synced to Firebase successfully', 'green');
+                updateConnectionStatus('Auto-sync enabled', 'green');
                 showNotification('Data synced to Firebase');
             } catch (error) {
                 console.error('Firebase sync error:', error);
@@ -1340,17 +1305,18 @@
                 await waitForFirebase();
                 updateConnectionStatus('Getting data from Firebase...', 'yellow');
                 
-                const dataRef = window.firebaseRef(window.firebaseDB, 'inventoryData');
+                const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
                 const snapshot = await window.firebaseGet(dataRef);
                 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     mergeSyncData(data);
-                    updateConnectionStatus('Synced from Firebase successfully', 'green');
+                    updateConnectionStatus('Auto-sync enabled', 'green');
                     showNotification('Data synced from Firebase');
                 } else {
-                    updateConnectionStatus('No data found in Firebase', 'gray');
-                    showNotification('No existing data in Firebase');
+                    updateConnectionStatus('Auto-sync enabled', 'green');
+                    // First time for this session, sync our data
+                    syncToFirebase();
                 }
             } catch (error) {
                 console.error('Firebase sync error:', error);
@@ -1359,22 +1325,11 @@
             }
         }
 
-        async function manualSync() {
-            try {
-                // First upload our data
-                await syncToFirebase();
-                // Then get latest data
-                await syncFromFirebase();
-            } catch (error) {
-                console.error('Manual sync failed:', error);
-            }
-        }
-
         async function setupRealTimeSync() {
             try {
                 await waitForFirebase();
                 
-                const dataRef = window.firebaseRef(window.firebaseDB, 'inventoryData');
+                const dataRef = window.firebaseRef(window.firebaseDB, `sessions/${sessionId}`);
                 window.firebaseOnValue(dataRef, (snapshot) => {
                     if (snapshot.exists()) {
                         const data = snapshot.val();
@@ -1386,37 +1341,16 @@
                     }
                 });
                 
-                updateConnectionStatus('Real-time sync active', 'green');
+                updateConnectionStatus('Auto-sync enabled', 'green');
             } catch (error) {
                 console.error('Real-time sync setup failed:', error);
                 updateConnectionStatus('Real-time sync failed', 'red');
             }
         }
 
-        function toggleRealTimeSync() {
-            isRealTimeSyncEnabled = !isRealTimeSyncEnabled;
-            const btn = document.getElementById('real-time-sync-btn');
-            
-            if (isRealTimeSyncEnabled) {
-                btn.textContent = '🔄 Sync Enabled';
-                btn.className = 'btn-success text-white py-3 px-4 rounded-lg text-sm bg-green-600';
-                showNotification('Real-time sync enabled');
-                setupRealTimeSync();
-                // Initial sync when enabling
-                syncFromFirebase();
-            } else {
-                btn.textContent = '🔄 Real-Time Sync';
-                btn.className = 'btn-success text-white py-3 px-4 rounded-lg text-sm';
-                showNotification('Real-time sync disabled');
-                updateConnectionStatus('Real-time sync disabled', 'gray');
-            }
-        }
-
         function broadcastUpdate(updateType, updateData) {
             // Automatically sync to Firebase when changes occur
-            if (isRealTimeSyncEnabled) {
-                syncToFirebase();
-            }
+            syncToFirebase();
         }
 
         function updateConnectionStatus(message, color) {
