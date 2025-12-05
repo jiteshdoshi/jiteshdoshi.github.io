@@ -1,1 +1,862 @@
-<h1> Coming up soon! </h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MalQure Therapeutics | Precision Antimalarials</title>
+    <meta name="description" content="MalQure Therapeutics develops MQ-990, a best-in-class PfKRS inhibitor to eradicate drug-resistant malaria with potent, selective, and affordable therapies." />
+    <meta name="theme-color" content="#0EA5E9" />
+    <link rel="icon" href="logo.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            950: '#020617',
+                            900: '#0F172A',
+                            800: '#1E293B',
+                            700: '#334155',
+                            600: '#475569',
+                            500: '#0EA5E9',
+                            400: '#38BDF8',
+                            300: '#7DD3FC',
+                        },
+                        accent: {
+                            600: '#059669',
+                            500: '#10B981',
+                            400: '#34D399',
+                            100: '#D1FAE5',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        display: ['Sora', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-feature-settings: 'cv11', 'ss01';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .hero-pattern {
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+                radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 30px 30px;
+            background-position: 0 0, 0 0, 0 0;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        [data-theme="light"] body {
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            color: #1e293b;
+        }
+        [data-theme="dark"] body {
+            background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+            color: #e2e8f0;
+        }
+        [data-theme="dark"] .bg-white { background: #1e293b !important; }
+        [data-theme="dark"] .bg-slate-50 { background: #0f172a !important; }
+        [data-theme="dark"] .text-slate-900 { color: #f1f5f9 !important; }
+        [data-theme="dark"] .text-slate-600 { color: #cbd5e1 !important; }
+        [data-theme="dark"] .border-slate-200 { border-color: #334155 !important; }
+        [data-theme="dark"] .border-slate-100 { border-color: #1e293b !important; }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .timeline-dot {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(14, 165, 233, 0); }
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .accordion-content.open {
+            max-height: 500px;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Sora', 'Inter', sans-serif;
+            letter-spacing: -0.02em;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased scroll-smooth">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200" role="navigation" aria-label="Primary">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-3">
+                    <img src="logo.png" alt="MalQure Logo" class="h-12 w-auto">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-xl text-slate-900 leading-none">MalQure</span>
+                        <span class="text-xs text-slate-500 uppercase tracking-widest">Therapeutics</span>
+                    </div>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#about" class="text-slate-600 hover:text-brand-500 font-medium transition">Mission</a>
+                    <a href="#value" class="text-slate-600 hover:text-brand-500 font-medium transition">Value Proposition</a>
+                    <a href="#pipeline" class="text-slate-600 hover:text-brand-500 font-medium transition">Pipeline</a>
+                    <a href="#data" class="text-slate-600 hover:text-brand-500 font-medium transition">Data</a>
+                    <a href="#tpp" class="text-slate-600 hover:text-brand-500 font-medium transition">TPP/TCP</a>
+                    <a href="#ip" class="text-slate-600 hover:text-brand-500 font-medium transition">IP</a>
+                    <a href="#team" class="text-slate-600 hover:text-brand-500 font-medium transition">Team</a>
+                    <a href="#news" class="text-slate-600 hover:text-brand-500 font-medium transition">News</a>
+                </div>
+                <button class="md:hidden p-2 rounded-lg border border-slate-200" id="menuBtn" aria-label="Toggle menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <button id="themeToggle" class="hidden md:block p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition mr-3" aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon text-slate-600"></i>
+                </button>
+                <a href="#contact" class="hidden md:block px-6 py-2.5 bg-brand-500 text-white font-semibold rounded-full hover:bg-brand-600 transition shadow-lg shadow-brand-500/30">
+                    Invest Now
+                </a>
+            </div>
+        </div>
+        <div id="mobileMenu" class="md:hidden hidden border-t border-slate-200 bg-white/95 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 grid gap-2">
+                <a href="#about" class="py-2 text-slate-700">Mission</a>
+                <a href="#value" class="py-2 text-slate-700">Value Proposition</a>
+                <a href="#pipeline" class="py-2 text-slate-700">Pipeline</a>
+                <a href="#data" class="py-2 text-slate-700">Data</a>
+                <a href="#tpp" class="py-2 text-slate-700">TPP/TCP</a>
+                <a href="#ip" class="py-2 text-slate-700">IP</a>
+                <a href="#team" class="py-2 text-slate-700">Team</a>
+                <a href="#news" class="py-2 text-slate-700">News</a>
+                <a href="#contact" class="py-2 text-slate-700">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern text-white">
+        <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-brand-500 rounded-full blur-[128px] opacity-20"></div>
+        <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-accent-500 rounded-full blur-[128px] opacity-20"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-4xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800 border border-slate-700 mb-8">
+                    <span class="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
+                    <span class="text-sm font-medium text-slate-300">Clinical Candidate Selected: <span class="text-white font-bold">MQ-990</span></span>
+                </div>
+                <h1 class="font-display text-5xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
+                    Breaking the Cycle of <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-accent-500">Drug Resistance</span>
+                </h1>
+                <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+                    We are engineering next-generation inhibitors to eradicate malaria. 
+                    Targeting <em>Pf</em>KRS with precision selectivity and superior solubility.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#data" class="px-8 py-4 bg-brand-500 text-white font-bold rounded-full hover:bg-brand-600 transition flex items-center justify-center gap-2">
+                        View The Data <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    <a href="#team" class="px-8 py-4 bg-slate-800 text-white font-bold rounded-full hover:bg-slate-700 border border-slate-700 transition">
+                        Meet The Team
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Video Section -->
+    <section class="py-16 bg-gradient-to-b from-slate-50 to-white">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+            <div class="text-center mb-8">
+                <h2 class="font-display text-3xl font-bold text-slate-900 mb-3">Our Story</h2>
+                <p class="text-slate-600">Watch our mission to eradicate drug-resistant malaria</p>
+            </div>
+            <div class="relative aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-900">
+                <video controls class="w-full h-full" poster="logo.png">
+                    <source src="MQ-990__Resistant_Malaria.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    </section>
+
+    <!-- Market Stats -->
+    <section id="about" class="py-12 bg-white border-b border-slate-100 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                    <div class="text-4xl font-bold text-slate-900 mb-2">240M+</div>
+                    <div class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Annual Cases</div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                    <div class="text-4xl font-bold text-accent-500 mb-2">$1.75B</div>
+                    <div class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Market by 2035</div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                    <div class="text-4xl font-bold text-brand-500 mb-2">2045</div>
+                    <div class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Patent Exclusivity</div>
+                </div>
+            </div>
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Mission</h3>
+                    <p class="text-slate-600">Engineer precision therapeutics that eradicate drug-resistant infectious diseases, ensuring accessibility in LMICs.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Vision</h3>
+                    <p class="text-slate-600">A malaria-free world where resistance is no longer a barrier to health.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Value Proposition -->
+    <section id="value" class="py-24 bg-slate-50 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Why MalQure</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">Potent, selective, and orally available; de-risked via fail-fast triage; aligned to MMV guidelines and LMIC pricing goals.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-2">Best-in-Class Potency</h3>
+                    <p class="text-slate-600">pIC50 9.0 with strong in vivo efficacy (ED90 0.7 mg/kg).</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-2">Selectivity & Safety</h3>
+                    <p class="text-slate-600">>1000× selectivity vs human homolog; Ames negative; hERG margin.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-2">Oral, Drug-like Profile</h3>
+                    <p class="text-slate-600">Solubility 200 µM, bioavailability 90%; designed for QD regimen.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Pivot / Discovery Story -->
+    <section id="pipeline" class="py-24 bg-slate-50 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">The "Fail Fast" Strategy</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                    We rigorously screened 7 chemical series, prioritizing capital efficiency. 
+                    We killed 6 series early to focus resources on the winner: <strong>MQ-990</strong>.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Funnel Chart -->
+                <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50">
+                    <h3 class="text-lg font-bold text-slate-900 mb-6">Discovery Funnel Attrition</h3>
+                    <div class="chart-container">
+                        <canvas id="funnelChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- The Pivot Story -->
+                <div class="space-y-8">
+                    <div class="relative pl-8 border-l-2 border-slate-200">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300"></div>
+                        <h4 class="text-xl font-bold text-slate-400">Series 2 (Runner Up)</h4>
+                        <p class="text-slate-500 mt-2">Excellent potency, but <span class="text-red-500 font-bold">failed solubility (50 µM)</span>. Discarded to avoid formulation risks.</p>
+                    </div>
+                    <div class="relative pl-8 border-l-2 border-brand-500">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-brand-500 ring-4 ring-brand-100"></div>
+                        <h4 class="text-2xl font-bold text-brand-600">MQ-990 (Winner)</h4>
+                        <p class="text-slate-600 mt-2">
+                            Rational design using <strong>Fluorine</strong> and <strong>Nitrogen</strong> modifications solved the solubility bottleneck without sacrificing potency.
+                        </p>
+                        <ul class="mt-4 space-y-2">
+                            <li class="flex items-center text-slate-700"><i class="fa-solid fa-check text-accent-500 mr-3"></i> 200 µM Solubility (4x improvement)</li>
+                            <li class="flex items-center text-slate-700"><i class="fa-solid fa-check text-accent-500 mr-3"></i> 90% Bioavailability</li>
+                            <li class="flex items-center text-slate-700"><i class="fa-solid fa-check text-accent-500 mr-3"></i> No Cross-Resistance</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scientific Data -->
+    <section id="data" class="py-24 bg-white fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12">
+                <div>
+                    <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Clinical Candidate Profile</h2>
+                    <p class="text-lg text-slate-600">Preclinical data supports IND filing in 2027.</p>
+                </div>
+                <div class="flex gap-2 mt-4 md:mt-0">
+                    <span class="px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-xs font-bold uppercase">In Vivo Validated</span>
+                    <span class="px-3 py-1 bg-accent-100 text-accent-700 rounded-full text-xs font-bold uppercase">Safety Clean</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Comparison Chart -->
+                <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-900 mb-2">Series 2 vs MQ-990</h4>
+                    <p class="text-xs text-slate-500 mb-6">Normalized Score (Higher is Better)</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Efficacy Chart -->
+                <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-900 mb-2">SCID Mouse Efficacy</h4>
+                    <p class="text-xs text-slate-500 mb-6">ED90 Dose (mg/kg) - Lower is Better</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="efficacyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Biology Mechanism -->
+                <div class="p-6 rounded-2xl bg-slate-900 text-white shadow-xl flex flex-col justify-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-20"></div>
+                    <h4 class="font-bold text-xl mb-4"><i class="fa-solid fa-microscope text-brand-400 mr-2"></i>Mechanism</h4>
+                    <p class="text-slate-300 text-sm mb-6">
+                        MQ-990 targets <em>Pf</em>KRS. We exploit a structural lock:
+                    </p>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center mr-4 font-bold">
+                                Iso
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase text-slate-400 font-bold">Human Enzyme</p>
+                                <p class="text-sm">Isoleucine blocks drug binding.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center mr-4 font-bold">
+                                Gly
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase text-slate-400 font-bold">Parasite Enzyme</p>
+                                <p class="text-sm">Glycine allows binding.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-slate-700">
+                        <p class="text-center font-bold text-brand-400 text-lg">>1000x Selectivity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TPP & TCP -->
+    <section id="tpp" class="py-24 bg-slate-50 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Product & Candidate Profiles</h2>
+                <p class="text-lg text-slate-600">Aligned with MMV guidelines; MQ-990 exceeds key metrics.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-4">Target Product Profile (TPP)</h3>
+                    <ul class="space-y-2 text-slate-700">
+                        <li>Indication: Acute uncomplicated P. falciparum malaria</li>
+                        <li>Population: Adults; repro-tox pending</li>
+                        <li>Dosing: Oral QD × 4 days (optimizing to × 3)</li>
+                        <li>Efficacy: Mouse ED90 = 0.7 mg/kg</li>
+                        <li>Resistance: Active vs resistant strains; no cross-resistance</li>
+                        <li>Stability: High metabolic stability; solid-state TBD</li>
+                        <li>Cost: CMC optimization for <$1 per course</li>
+                    </ul>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-4">Target Candidate Profile (TCP)</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl border border-slate-200"><p class="text-xs text-slate-500">Solubility</p><p class="text-lg font-bold">200 µM</p></div>
+                        <div class="p-4 rounded-xl border border-slate-200"><p class="text-xs text-slate-500">Potency</p><p class="text-lg font-bold">pIC50 9.0</p></div>
+                        <div class="p-4 rounded-xl border border-slate-200"><p class="text-xs text-slate-500">Selectivity</p><p class="text-lg font-bold">>1000×</p></div>
+                        <div class="p-4 rounded-xl border border-slate-200"><p class="text-xs text-slate-500">hERG</p><p class="text-lg font-bold">pIC50 4.7</p></div>
+                        <div class="p-4 rounded-xl border border-slate-200"><p class="text-xs text-slate-500">Ames</p><p class="text-lg font-bold">Negative</p></div>
+                        <div class="p-4 rounded-xl border border-slate-200"><p class="text-xs text-slate-500">Bioavailability</p><p class="text-lg font-bold">90%</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- IP & Exclusivity -->
+    <section id="ip" class="py-24 bg-white fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Intellectual Property</h2>
+                    <ul class="space-y-2 text-slate-700">
+                        <li>Provisional patent filed</li>
+                        <li>Scope: Composition of Matter + Method of Use</li>
+                        <li>Exclusivity projected to 2045</li>
+                        <li>Freedom to Operate: Confirmed clear</li>
+                    </ul>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-900 text-white shadow-xl">
+                    <h3 class="font-bold text-xl mb-4">Interactive Timeline</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="timeline-dot w-3 h-3 rounded-full bg-accent-500"></div>
+                            <div><p class="text-slate-300 text-sm">CMC Optimization</p><p class="font-bold">Q1–Q2 2026</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-3 h-3 rounded-full bg-slate-600"></div>
+                            <div><p class="text-slate-300 text-sm">GLP Toxicology</p><p class="font-bold">Q3–Q4 2026</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-3 h-3 rounded-full bg-slate-600"></div>
+                            <div><p class="text-slate-300 text-sm">IND Filing</p><p class="font-bold">Q1 2027</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-3 h-3 rounded-full bg-slate-600"></div>
+                            <div><p class="text-slate-300 text-sm">Phase 1</p><p class="font-bold">Q2 2027</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advisors & Recognition -->
+    <section class="py-24 bg-white fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Recognition & Support</h2>
+                <p class="text-lg text-slate-600">Backed by leading institutions and advisors</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                    <i class="fa-solid fa-university text-4xl text-brand-500 mb-4"></i>
+                    <h3 class="font-bold text-slate-900 mb-2">Academic Partnerships</h3>
+                    <p class="text-slate-600 text-sm">Collaborating with top research institutions</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                    <i class="fa-solid fa-award text-4xl text-accent-500 mb-4"></i>
+                    <h3 class="font-bold text-slate-900 mb-2">MMV Aligned</h3>
+                    <p class="text-slate-600 text-sm">Meeting Medicines for Malaria Venture guidelines</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                    <i class="fa-solid fa-flask text-4xl text-brand-500 mb-4"></i>
+                    <h3 class="font-bold text-slate-900 mb-2">Lab Facilities</h3>
+                    <p class="text-slate-600 text-sm">State-of-the-art medicinal chemistry capabilities</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="py-24 bg-slate-50 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Leadership & Science</h2>
+                <p class="text-lg text-slate-600">A multidisciplinary team dedicated to global health.</p>
+            </div>
+
+            <!-- Team Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                
+                <!-- Nishant -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Nishant.jpeg" alt="Nishant" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <p class="text-xs font-bold uppercase tracking-wider text-brand-400 mb-1">Team Leader</p>
+                            <h3 class="text-xl font-bold">Nishant</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Cancer Biology</p>
+                </div>
+
+                <!-- Sneha -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Sneha.jpg" alt="Sneha" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <p class="text-xs font-bold uppercase tracking-wider text-brand-400 mb-1">Program Manager</p>
+                            <h3 class="text-xl font-bold">Sneha</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Structural Biology</p>
+                </div>
+
+                <!-- Jitesh -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="JItesh.jpeg" alt="Jitesh" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <h3 class="text-xl font-bold">Jitesh</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Computational Chemistry</p>
+                </div>
+
+                <!-- Venkatesh -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Venkatesh.jpg" alt="Venkatesh" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <h3 class="text-xl font-bold">Venkatesh</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Organic Chemistry</p>
+                </div>
+
+                <!-- Vignesh -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Vignesh.jpeg" alt="Vignesh" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <h3 class="text-xl font-bold">Vignesh</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Medicinal Chemistry</p>
+                </div>
+
+                <!-- Nilima -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Nilima.jpeg" alt="Nilima" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <h3 class="text-xl font-bold">Nilima</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Biology</p>
+                </div>
+
+                <!-- Dhaneesha -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Dhaneesha.jpeg" alt="Dhaneesha" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <h3 class="text-xl font-bold">Dhaneesha</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Biology</p>
+                </div>
+
+                <!-- Sam -->
+                <div class="group">
+                    <div class="relative overflow-hidden rounded-2xl aspect-[3/4] mb-4 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <img src="Sam.jpeg" alt="Sam" class="object-cover w-full h-full group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <h3 class="text-xl font-bold">Sam</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 font-medium">Assay Development</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-24 bg-white fade-in">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
+                <p class="text-lg text-slate-600">Common investor questions answered</p>
+            </div>
+            <div class="space-y-4">
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <button class="accordion-btn w-full flex justify-between items-center text-left" data-target="faq1">
+                        <h3 class="font-bold text-slate-900">What differentiates MQ-990 from existing antimalarials?</h3>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="faq1" class="accordion-content mt-4 text-slate-600">
+                        <p>MQ-990 targets PfKRS with >1000× selectivity vs human enzyme, no cross-resistance to artemisinin/chloroquine, and superior oral bioavailability (90%). Unlike ACTs, it's a single-agent therapy designed for QD dosing.</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <button class="accordion-btn w-full flex justify-between items-center text-left" data-target="faq2">
+                        <h3 class="font-bold text-slate-900">What is the addressable market?</h3>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="faq2" class="accordion-content mt-4 text-slate-600">
+                        <p>240M+ cases annually, growing to $1.75B market by 2035. LMICs represent primary target; pricing goal <$1 per treatment course enables broad access while maintaining commercial viability via volume.</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <button class="accordion-btn w-full flex justify-between items-center text-left" data-target="faq3">
+                        <h3 class="font-bold text-slate-900">What are the key milestones to IND?</h3>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="faq3" class="accordion-content mt-4 text-slate-600">
+                        <p>CMC optimization (Q1-Q2 2026), GLP toxicology including repro-tox (Q3-Q4 2026), IND filing (Q1 2027), Phase 1 initiation (Q2 2027). Candidate already validated in vivo with ED90 0.7 mg/kg.</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <button class="accordion-btn w-full flex justify-between items-center text-left" data-target="faq4">
+                        <h3 class="font-bold text-slate-900">What is the IP strategy?</h3>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="faq4" class="accordion-content mt-4 text-slate-600">
+                        <p>Provisional patent filed covering Composition of Matter + Method of Use. Exclusivity projected to 2045. FTO confirmed clear. Series 9 (MQ-990) scaffold distinct from terminated Series 15 IP blocks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Downloads & Resources -->
+    <section class="py-24 bg-slate-50 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">Resources</h2>
+                <p class="text-lg text-slate-600">Download our materials for investors</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <a href="pitch_deck.html" class="p-6 rounded-2xl bg-white border border-slate-200 hover:shadow-lg transition group">
+                    <i class="fa-solid fa-presentation text-3xl text-brand-500 mb-4 block"></i>
+                    <h3 class="font-bold text-slate-900 mb-2 group-hover:text-brand-500 transition">Investor Pitch Deck</h3>
+                    <p class="text-slate-600 text-sm">Comprehensive slide presentation</p>
+                </a>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200 hover:shadow-lg transition group cursor-pointer">
+                    <i class="fa-solid fa-file-pdf text-3xl text-accent-500 mb-4 block"></i>
+                    <h3 class="font-bold text-slate-900 mb-2 group-hover:text-accent-500 transition">One-Pager PDF</h3>
+                    <p class="text-slate-600 text-sm">Executive summary (Coming Soon)</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200 hover:shadow-lg transition group cursor-pointer">
+                    <i class="fa-solid fa-book text-3xl text-brand-500 mb-4 block"></i>
+                    <h3 class="font-bold text-slate-900 mb-2 group-hover:text-brand-500 transition">Scientific Report</h3>
+                    <p class="text-slate-600 text-sm">Detailed preclinical data package</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Signup -->
+    <section class="py-16 bg-gradient-to-br from-brand-900 to-slate-900 text-white fade-in">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="font-display text-3xl font-bold mb-4">Stay Updated</h2>
+            <p class="text-slate-300 mb-8">Get the latest news on MQ-990 development and partnership opportunities</p>
+            <form class="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto" onsubmit="event.preventDefault(); alert('Thank you! Newsletter signup coming soon.');">
+                <input type="email" placeholder="Your email address" class="flex-1 px-6 py-3 rounded-full text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-500" required>
+                <button type="submit" class="px-8 py-3 bg-accent-500 text-slate-900 font-bold rounded-full hover:bg-accent-400 transition">
+                    Subscribe
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer / Contact -->
+    <section id="news" class="py-24 bg-slate-50 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-4xl font-bold text-slate-900 mb-4">News & Updates</h2>
+                <p class="text-lg text-slate-600">Follow our progress and milestones.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <p class="text-xs text-slate-500">Dec 2025</p>
+                    <h3 class="font-bold text-slate-900">MQ-990 selected as clinical candidate</h3>
+                    <p class="text-slate-600 mt-2">Best-in-class profile validated in vivo.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <p class="text-xs text-slate-500">Q1 2026</p>
+                    <h3 class="font-bold text-slate-900">CMC optimization kickoff</h3>
+                    <p class="text-slate-600 mt-2">Process improvements targeting <$1 course pricing.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                    <p class="text-xs text-slate-500">Q3 2026</p>
+                    <h3 class="font-bold text-slate-900">GLP tox studies</h3>
+                    <p class="text-slate-600 mt-2">Including reproductive toxicology.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact" class="bg-slate-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="font-display text-3xl font-bold mb-6">Partner with MalQure</h2>
+            <p class="text-slate-400 mb-8 max-w-2xl mx-auto">
+                Join us in our mission to save millions of lives. We are seeking strategic partnerships for Phase 1 clinical trials and CMC optimization.
+            </p>
+            <a href="mailto:partnerships@malqure.com" class="inline-block px-8 py-4 bg-accent-500 text-slate-900 font-bold rounded-full hover:bg-accent-400 transition mb-12">
+                partnerships@malqure.com
+            </a>
+            
+            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500">
+                <p>&copy; 2025 MalQure Therapeutics Pvt. Ltd. All rights reserved.</p>
+                <div class="flex gap-4 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white">Privacy Policy</a>
+                    <a href="#" class="hover:text-white">Terms of Use</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chart Logic -->
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', currentTheme);
+        themeToggle.querySelector('i').className = currentTheme === 'dark' ? 'fa-solid fa-sun text-slate-300' : 'fa-solid fa-moon text-slate-600';
+        
+        themeToggle.addEventListener('click', () => {
+            const newTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.querySelector('i').className = newTheme === 'dark' ? 'fa-solid fa-sun text-slate-300' : 'fa-solid fa-moon text-slate-600';
+        });
+
+        // Scroll Animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+        // Accordion FAQ
+        document.querySelectorAll('.accordion-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.target);
+                const icon = btn.querySelector('i');
+                target.classList.toggle('open');
+                icon.style.transform = target.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0)';
+            });
+        });
+
+        // Lazy Loading Images
+        if ('loading' in HTMLImageElement.prototype) {
+            const images = document.querySelectorAll('img[loading="lazy"]');
+            images.forEach(img => { img.src = img.dataset.src; });
+        }
+
+        // Mobile menu toggle
+        const menuBtn = document.getElementById('menuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (menuBtn && mobileMenu) {
+            menuBtn.addEventListener('click', ()=>{
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Common Options
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // 1. Funnel Chart (Attrition)
+        new Chart(document.getElementById('funnelChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Screened', 'Hit ID', 'Lead Opt', 'Selected'],
+                datasets: [{
+                    label: 'Chemical Series',
+                    data: [7, 6, 4, 1],
+                    backgroundColor: ['#94a3b8', '#64748b', '#0ea5e9', '#10b981'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+            }
+        });
+
+        // 2. Radar Chart (Comparison)
+        new Chart(document.getElementById('radarChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Potency', 'Solubility', 'Bioavail.', 'Stability', 'Safety'],
+                datasets: [
+                    {
+                        label: 'MQ-990',
+                        data: [9, 10, 9, 9, 9],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        pointBackgroundColor: '#10b981'
+                    },
+                    {
+                        label: 'Series 2',
+                        data: [8.9, 2.5, 8, 8, 8],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        pointBackgroundColor: '#ef4444'
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        suggestedMin: 0,
+                        suggestedMax: 10,
+                        ticks: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 3. Efficacy Chart
+        new Chart(document.getElementById('efficacyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Series 2', 'MQ-990'],
+                datasets: [{
+                    label: 'ED90 (mg/kg)',
+                    data: [1.0, 0.7],
+                    backgroundColor: ['#94a3b8', '#10b981'],
+                    borderRadius: 6,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Lower Dose = Higher Potency', position: 'bottom' }
+                },
+                scales: { y: { beginAtZero: true, title: {display: true, text: 'Dose (mg/kg)'} }, x: { grid: { display: false } } }
+            }
+        });
+    </script>
+</body>
+</html>
