@@ -1,0 +1,172 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const videos = [
+  {
+    id: "TpofopDIIy4",
+    title: "Molecular Docking with all new AutoDock Vina 1.2 | New era of docking",
+    description: "A walkthrough of AutoDock Vina 1.2's updated docking engine and what's new for structure-based drug design workflows.",
+    category: "Tutorial",
+  },
+  {
+    id: "_GjrSbD-gvI",
+    title: "Webinar Demonstration - Molecular Dynamics Simulation of Protein-Ligand using Gromacs",
+    description: "Hands-on demonstration of setting up and running a protein-ligand molecular dynamics simulation in GROMACS.",
+    category: "Tutorial",
+  },
+  {
+    id: "CjW803pt45c",
+    title: "Webinar - Practical Molecular Docking",
+    description: "A practical, step-by-step session on running molecular docking studies for drug discovery research.",
+    category: "Tutorial",
+  },
+  {
+    id: "NLrjHq89fYM",
+    title: "Webinar - Introduction to Molecular Docking",
+    description: "Foundational concepts in molecular docking — the theory and workflow behind structure-based virtual screening.",
+    category: "Tutorial",
+  },
+  {
+    id: "BDyMN1cMUpE",
+    title: "Webinar on #Pharmacogenomics – Role of Bioinformatics Methods in Modern and Future Medicine",
+    description: "How bioinformatics methods are shaping pharmacogenomics and personalised medicine today and in the years ahead.",
+    category: "Webinar",
+  },
+  {
+    id: "GHk3GVWbJ7M",
+    title: "Webinar - Data Driven Transformations in Drug Discovery",
+    description: "A look at how data-driven and computational approaches are transforming modern drug discovery pipelines.",
+    category: "Webinar",
+  },
+  {
+    id: "CzxneVaH3YY",
+    title: "Webinar - Overview of Computer Aided Drug Discovery Process",
+    description: "An end-to-end overview of the computer-aided drug discovery (CADD) process, from target to lead.",
+    category: "Webinar",
+  },
+  {
+    id: "UFUqz1nIAj0",
+    title: "Reference and Citation Management | Mendeley Demonstration (Recorded Session)",
+    description: "A recorded demonstration of using Mendeley for reference and citation management in research workflows.",
+    category: "Tool Demo",
+  },
+  {
+    id: "mz_KXQn_2ME",
+    title: "MS Office (Mobile) - new feature to improve presentation skills",
+    description: "A quick look at a mobile MS Office feature that helps improve presentation delivery.",
+    category: "Tool Demo",
+  },
+];
+
+const categories = [...new Set(videos.map(v => v.category))];
+---
+
+<BaseLayout
+  title="Media"
+  description="Videos, webinars, and tutorials by Jitesh Doshi on molecular docking, molecular dynamics, pharmacogenomics, and computational drug discovery."
+>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-label">Watch &amp; Listen</span>
+      <h1>Media</h1>
+      <p class="page-sub">
+        YouTube tutorials and webinars on molecular docking, molecular dynamics, pharmacogenomics, and computer-aided drug discovery.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+
+      <div class="tag-filter" style="margin-bottom:2.5rem;">
+        <span class="tag tag-accent">All</span>
+        {categories.map(c => <span class="tag tag-neutral">{c}</span>)}
+      </div>
+
+      <div class="grid-3">
+        {videos.map(video => (
+          <div class="video-card post-card">
+            <div class="video-thumbnail">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube-nocookie.com/embed/${video.id}`}
+                title={video.title}
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+              <span class="video-cat tag tag-teal">{video.category}</span>
+            </div>
+            <div class="post-card-body">
+              <div class="post-card-title">{video.title}</div>
+              <p class="post-card-desc">{video.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Channel CTA -->
+      <div class="newsletter-band" style="margin-top:4rem; text-align:left;">
+        <span class="section-label">More on YouTube</span>
+        <h2 style="margin:0.5rem 0 0.75rem;">More content on the way</h2>
+        <p style="color:var(--text-muted); max-width:52ch; margin:0 0 1.25rem;">
+          New videos are added to the channel regularly. Visit YouTube for the full library, or check back here as the gallery grows.
+        </p>
+        <a href="https://www.youtube.com/@jiteshvdoshi" target="_blank" rel="noopener" class="btn btn-primary">
+          Subscribe on YouTube
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 5rem 0 3rem;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 70%, rgba(15,118,110,0.06) 0%, transparent 60%),
+      var(--bg);
+  }
+  .page-sub { font-size:1.1rem; color:var(--text-muted); max-width:52ch; margin-top:0.75rem; }
+  .tag-filter { display:flex; flex-wrap:wrap; gap:0.5rem; }
+
+  .video-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .video-thumbnail {
+    position: relative;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    background: var(--bg-surface-2);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .video-thumbnail iframe {
+    display: block;
+    border: 0;
+  }
+
+  .video-cat {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-size: 0.7rem !important;
+    pointer-events: none;
+  }
+
+  code {
+    font-size: 0.875rem;
+    background: var(--bg-surface-2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+</style>

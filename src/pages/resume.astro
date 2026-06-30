@@ -1,0 +1,507 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Resume"
+  description="Professional resume of Jitesh Doshi — Senior Research Scientist at Peptris Technologies, specialising in Computer Aided and AI-based drug discovery, cheminformatics, molecular modelling, and bioinformatics."
+>
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="resume-header">
+        <div>
+          <span class="section-label">Professional</span>
+          <h1 style="margin-bottom:0.25rem;">Jitesh Doshi</h1>
+          <p class="resume-title-line">Computer Aided / AI Based Drug Discovery Scientist</p>
+          <div class="resume-contacts">
+            <a href="mailto:jiteshvdoshi@gmail.com">jiteshvdoshi@gmail.com</a>
+            <span>·</span>
+            <span>+91 98903 36470</span>
+            <span>·</span>
+            <a href="https://www.linkedin.com/in/jiteshvdoshi/" target="_blank" rel="noopener">linkedin.com/in/jiteshvdoshi</a>
+            <span>·</span>
+            <a href="https://github.com/jiteshdoshi" target="_blank" rel="noopener">github.com/jiteshdoshi</a>
+            <span>·</span>
+            <span>Bengaluru, India</span>
+          </div>
+        </div>
+        <div class="no-print">
+          <button class="btn btn-secondary" onclick="window.print()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Download / Print PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BODY ───────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="container resume-layout">
+
+      <!-- LEFT COLUMN -->
+      <aside class="resume-aside">
+
+        <div class="resume-section">
+          <div class="resume-section-title">Summary</div>
+          <p style="font-size:0.9rem; color: var(--text-muted); line-height:1.7; margin:0;">
+            Computational scientist with 15+ years at the intersection of bioinformatics, cheminformatics, and AI.
+            Currently driving AI-based drug discovery at Peptris Technologies. Strong track record in molecular modelling,
+            ML model development, and translating research into usable tools. Extensive background in academia and
+            science education across India and internationally.
+          </p>
+        </div>
+
+        <div class="resume-section">
+          <div class="resume-section-title">Technical Skills</div>
+          <div class="skills-block">
+            <div class="skill-category">
+              <span class="skill-cat-label">Core</span>
+              <div class="skill-grid">
+                <span class="tag tag-accent">Cheminformatics</span>
+                <span class="tag tag-accent">Bioinformatics</span>
+                <span class="tag tag-accent">Artificial Intelligence</span>
+              </div>
+            </div>
+            <div class="skill-category">
+              <span class="skill-cat-label">Languages</span>
+              <div class="skill-grid">
+                <span class="tag tag-neutral">Python</span>
+                <span class="tag tag-neutral">Perl</span>
+                <span class="tag tag-neutral">Java</span>
+                <span class="tag tag-neutral">SQL</span>
+                <span class="tag tag-neutral">Bash</span>
+              </div>
+            </div>
+            <div class="skill-category">
+              <span class="skill-cat-label">ML / DL</span>
+              <div class="skill-grid">
+                <span class="tag tag-neutral">PyTorch</span>
+                <span class="tag tag-neutral">TensorFlow</span>
+                <span class="tag tag-neutral">Scikit-learn</span>
+                <span class="tag tag-neutral">DeepChem</span>
+              </div>
+            </div>
+            <div class="skill-category">
+              <span class="skill-cat-label">Cheminformatics</span>
+              <div class="skill-grid">
+                <span class="tag tag-neutral">RDKit</span>
+                <span class="tag tag-neutral">OpenBabel</span>
+                <span class="tag tag-neutral">MDAnalysis</span>
+              </div>
+            </div>
+            <div class="skill-category">
+              <span class="skill-cat-label">Simulation</span>
+              <div class="skill-grid">
+                <span class="tag tag-neutral">GROMACS</span>
+                <span class="tag tag-neutral">AutoDock</span>
+                <span class="tag tag-neutral">Molecular Dynamics</span>
+                <span class="tag tag-neutral">HPC / C-DAC</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resume-section">
+          <div class="resume-section-title">Education</div>
+          <div style="display:flex; flex-direction:column; gap:1.25rem;">
+            <div>
+              <div style="font-family:var(--font-display); font-weight:600; font-size:0.95rem;">MSc, Bioinformatics</div>
+              <div style="font-size:0.85rem; color:var(--text-muted);">Bioinformatics Centre, Savitribai Phule Pune University · 2009 – 2011</div>
+            </div>
+            <div>
+              <div style="font-family:var(--font-display); font-weight:600; font-size:0.95rem;">BSc, Biotechnology</div>
+              <div style="font-size:0.85rem; color:var(--text-muted);">University of Mumbai · 2006 – 2009</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resume-section">
+          <div class="resume-section-title">Certifications</div>
+          <div style="display:flex; flex-direction:column; gap:0.6rem;">
+            <div style="font-size:0.85rem; color:var(--text-muted);">Bioinformatics National Certification (BINC)</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">Genomic Data Science with Galaxy</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">Python for Genomic Data Science</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">Introduction to Genomic Technologies</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">Command Line Tools for Genomic Data Science</div>
+          </div>
+        </div>
+
+        <div class="resume-section">
+          <div class="resume-section-title">Honours &amp; Awards</div>
+          <div style="display:flex; flex-direction:column; gap:0.6rem;">
+            <div style="font-size:0.85rem; color:var(--text-muted);">Prof G. N. Ramchandran Scholarship Award</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">DBT Award</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">BioInformatics National Certification (BINC)</div>
+          </div>
+        </div>
+
+        <div class="resume-section">
+          <div class="resume-section-title">Languages</div>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <div style="font-size:0.875rem;">English <span style="color:var(--text-subtle);">— Full Professional</span></div>
+            <div style="font-size:0.875rem;">Marathi <span style="color:var(--text-subtle);">— Native / Bilingual</span></div>
+            <div style="font-size:0.875rem;">Hindi <span style="color:var(--text-subtle);">— Full Professional</span></div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- MAIN COLUMN -->
+      <main class="resume-main">
+
+        <div class="resume-section">
+          <div class="resume-section-title">Experience</div>
+
+          <div class="exp-list">
+
+            <!-- Peptris: Senior Research Scientist -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Senior Research Scientist</div>
+                  <div class="exp-company">
+                    <strong>Peptris Technologies</strong>
+                    <span class="tag tag-accent" style="font-size:0.7rem;">Current</span>
+                  </div>
+                </div>
+                <div class="exp-date">Apr 2024 – Present · Bengaluru</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Leading AI-driven drug discovery initiatives using generative models, structure-based design, and ML-guided hit identification.</li>
+                <li>Architecting end-to-end computational pipelines integrating molecular docking, ADMET prediction, and generative molecular design.</li>
+                <li>Driving cross-functional research strategy at the intersection of cheminformatics, deep learning, and translational biology.</li>
+              </ul>
+            </div>
+
+            <!-- Peptris: Research Scientist -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Research Scientist</div>
+                  <div class="exp-company"><strong>Peptris Technologies</strong></div>
+                </div>
+                <div class="exp-date">Feb 2022 – Mar 2024 · Bengaluru</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Developed ML models for molecular property prediction, virtual screening, and target identification.</li>
+                <li>Built and maintained computational drug discovery workflows using Python, RDKit, and deep learning frameworks.</li>
+                <li>Collaborated with wet-lab teams to prioritise computational hits for experimental validation.</li>
+              </ul>
+            </div>
+
+            <!-- BioInsight Solutions -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Founder &amp; Director</div>
+                  <div class="exp-company"><strong>BioInsight Solutions (OPC) Private Limited</strong></div>
+                </div>
+                <div class="exp-date">Sep 2020 – Jan 2022 · Kharghar, Navi Mumbai</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Founded and ran a bioinformatics training, research support, and consultancy venture, incorporated September 2020.</li>
+                <li>Provided structural bioinformatics services to academic and industry clients, including molecular docking, dynamics, and sequence analysis.</li>
+                <li>Wound down operations in January 2022 to join Peptris Technologies full-time.</li>
+              </ul>
+            </div>
+
+            <!-- MakeIntern -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Workshop Mentor — Bioinformatics, Cheminformatics &amp; CADD</div>
+                  <div class="exp-company"><strong>MakeIntern</strong></div>
+                </div>
+                <div class="exp-date">Aug 2017 – Apr 2022 · Mumbai / Pan-India</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Delivered skill-based training to students across disciplines in cheminformatics, bioinformatics, and computer-aided drug design through workshops organised in association with IITs at colleges across India.</li>
+              </ul>
+            </div>
+
+            <!-- Freelance -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Bioinformatics Consultant</div>
+                  <div class="exp-company"><strong>Freelance</strong></div>
+                </div>
+                <div class="exp-date">Jan 2019 – Jan 2020 · Navi Mumbai</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Independent consultant for academic and research institutes: sequence/structure analysis workflows, CADD, molecular docking &amp; dynamics simulations, and computational platform training.</li>
+              </ul>
+            </div>
+
+            <!-- TMC-ACTREC -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Bioinformatics Research Fellow</div>
+                  <div class="exp-company"><strong>Tata Memorial Centre – ACTREC</strong></div>
+                </div>
+                <div class="exp-date">Jul 2016 – Apr 2018 · Navi Mumbai</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Molecular modelling, docking, and MD simulations of oncology-relevant proteins.</li>
+                <li>HPC cluster simulations using GROMACS at C-DAC Pune; inhibitor molecule design using CADD tools.</li>
+                <li>Developed and maintained databases and web applications (Java, JSP, MySQL) for research data management.</li>
+              </ul>
+            </div>
+
+            <!-- UIC -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Graduate Student &amp; Teaching Assistant</div>
+                  <div class="exp-company"><strong>University of Illinois at Chicago</strong></div>
+                </div>
+                <div class="exp-date">Jan 2014 – Aug 2014 · Chicago, IL</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>Teaching Assistant for biochemistry; led discussion sessions and assisted in exam design and grading.</li>
+                <li>IT infrastructure, database/web support, and web application development (Perl, ASP).</li>
+              </ul>
+            </div>
+
+            <!-- Bioinformatics Center, Pune -->
+            <div class="exp-item">
+              <div class="exp-header">
+                <div>
+                  <div class="exp-title">Research Associate</div>
+                  <div class="exp-company"><strong>Bioinformatics Center, University of Pune</strong></div>
+                </div>
+                <div class="exp-date">Jan 2012 – Nov 2013</div>
+              </div>
+              <ul class="exp-bullets">
+                <li>DBT Centre of Excellence project: molecular docking and dynamics simulations of p38 MAP kinase activation mechanism.</li>
+                <li>Statistical analysis of epitope stabilities for vaccine target design; mentoring MSc Bioinformatics students.</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="resume-section">
+          <div class="resume-section-title">Publications</div>
+
+          <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-subtle); margin-bottom:0.6rem;">Lead authorship</div>
+          <div style="display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem;">
+
+            <div class="pub-item">
+              <div class="pub-title">PDZscape: a comprehensive PDZ-protein database</div>
+              <div class="pub-meta">Doshi J, Kuppili RR, Gurdasani S, Venkatakrishnan N, Saxena A, Bose K · <em>BMC Bioinformatics</em> 19(1):160, 2018</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Analysing Cancer Signalling Pathways: A Structural Bioinformatics Approach</div>
+              <div class="pub-meta">Doshi J, Dutta S, Bose K · Book chapter in <em>Unravelling Cancer Signaling Pathways: A Multidisciplinary Approach</em>, pp. 271–293, Springer Singapore, 2019</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Simultaneous gene selection and cancer classification using chemical reaction optimization</div>
+              <div class="pub-meta">Doshi J, Chindhe M, Kharche Y, Ghosh S, Valadi J · <em>Proceedings of the World Congress on Engineering</em> 1, 2014</div>
+            </div>
+
+          </div>
+
+          <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-subtle); margin-bottom:0.6rem;">Collaborative &amp; mentored research</div>
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+
+            <div class="pub-item">
+              <div class="pub-title">Synthesis and evaluation of ivacaftor derivatives with reduced lipophilicity</div>
+              <div class="pub-meta">Iazzi M, Junor P, Doshi J, Acharya S, Suhring R, Viirre RD, Gupta GD · <em>ACS Omega</em> 8(48):45606–45615, 2023</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Energy decomposition and water-swapping analysis to investigate the SNP-associated DPD-mediated 5-FU resistance</div>
+              <div class="pub-meta">Verma H, Doshi J, Narendra G, Raju B, Singh PK, Silakari O · <em>SAR and QSAR in Environmental Research</em> 34(1):39–64, 2023</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Computational studies and scaffold search for APOE4 as coronary artery disease target by virtual screening</div>
+              <div class="pub-meta">Hazarika L, Sen S, Doshi J · <em>Computational Biology and Bioinformatics</em> 10(2):49, 2022</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Elevated fibrinogen level reduces therapeutic efficiency of AD drugs: biophysical insights into the interaction of FDA-approved cholinesterase inhibitors with human fibrinogen</div>
+              <div class="pub-meta">Baruah P, Paul D, Doshi J, Mitra S · <em>The Journal of Physical Chemistry B</em> 126(1):30–43, 2021</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Identification of APOE4 modulators, targeted therapeutic candidates in Coronary Artery Disease, using molecular docking studies</div>
+              <div class="pub-meta">Hazarika L, Sen S, Zawar A, Doshi J · <em>bioRxiv</em> 2021.02.02.429307, 2021</div>
+            </div>
+
+            <div class="pub-item">
+              <div class="pub-title">Molecular docking analysis of arjunolic acid from <em>Terminalia arjuna</em> with a coronary artery disease target APOE4</div>
+              <div class="pub-meta">Hazarika L, Sen S, Doshi J · <em>Bioinformation</em> 17(11):949, 2021</div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="resume-section no-print" style="background: var(--accent-light); border-radius: var(--radius-md); padding: 1.25rem; border: 1px solid var(--border);">
+          <p style="margin:0; font-size:0.9rem; color: var(--text);">
+            <strong>Open to:</strong> Consulting, scientific advisory roles, speaking at conferences, and research collaborations in computational drug discovery, cheminformatics, and AI for biology.
+            <a href="/connect" style="color: var(--accent); font-weight:600;">Get in touch →</a>
+          </p>
+        </div>
+
+      </main>
+
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 4rem 0 3rem;
+    background:
+      radial-gradient(ellipse 70% 50% at 20% 30%, rgba(184,134,11,0.06) 0%, transparent 60%),
+      var(--bg);
+  }
+
+  .resume-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .resume-title-line {
+    font-size: 1.05rem;
+    color: var(--teal);
+    font-family: var(--font-display);
+    font-weight: 600;
+    margin: 0.25rem 0 0.75rem;
+  }
+
+  .resume-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .resume-contacts a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .resume-contacts a:hover { text-decoration: underline; }
+
+  .resume-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .resume-layout { grid-template-columns: 1fr; }
+    .resume-aside { order: 2; }
+    .resume-main  { order: 1; }
+  }
+
+  .skills-block { display: flex; flex-direction: column; gap: 0.875rem; }
+  .skill-category { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .skill-cat-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  .exp-list { display: flex; flex-direction: column; gap: 2rem; }
+
+  .exp-item {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .exp-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .exp-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+  }
+
+  .exp-company {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .exp-date {
+    font-size: 0.82rem;
+    color: var(--text-subtle);
+    white-space: nowrap;
+    padding-top: 0.2rem;
+    text-align: right;
+  }
+
+  .exp-bullets {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .exp-bullets li {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .pub-item {
+    padding: 0.875rem 1rem;
+    background: var(--bg-surface-2);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--teal);
+  }
+
+  .pub-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .pub-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  @media print {
+    .page-hero { padding: 1rem 0; }
+    .section { padding: 1rem 0; }
+    .resume-layout { grid-template-columns: 220px 1fr; gap: 1.5rem; }
+    .exp-bullets li { color: #333; }
+  }
+</style>

@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const logs = (await getCollection('travel', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+function formatDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+---
+
+<BaseLayout
+  title="Travel"
+  description="Nature travel logs by Jitesh Doshi — hiking, wilderness, and wild places across India and beyond."
+>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-label">Out there</span>
+      <h1>Travel Logs</h1>
+      <p class="page-sub">
+        Field notes from the Western Ghats, Himalayas, and wherever the trail leads. Long hikes, rain, bad weather, and good decisions.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+
+      {logs.length === 0 ? (
+        <div style="text-align:center; padding:4rem 0; color:var(--text-muted);">
+          <p>First travel log coming soon.</p>
+        </div>
+      ) : (
+        <div class="travel-list">
+          {logs.map(log => (
+            <a href={`/travel/${log.slug}`} class="travel-card card-link">
+              <div class="travel-card-img-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-subtle)"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              </div>
+              <div class="travel-card-body">
+                <div class="travel-card-location">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {log.data.location}
+                  <span style="color:var(--border);">·</span>
+                  <time>{formatDate(log.data.pubDate)}</time>
+                </div>
+                <div class="post-card-title">{log.data.title}</div>
+                <p class="post-card-desc">{log.data.description}</p>
+                <div class="post-card-tags">
+                  {log.data.tags.slice(0, 4).map(t => (
+                    <span class="tag tag-teal">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 5rem 0 3rem;
+    background:
+      radial-gradient(ellipse 70% 50% at 60% 30%, rgba(15,118,110,0.07) 0%, transparent 60%),
+      var(--bg);
+  }
+  .page-sub { font-size:1.1rem; color:var(--text-muted); max-width:52ch; margin-top:0.75rem; }
+
+  .travel-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 640px) {
+    .travel-list { grid-template-columns: 1fr; }
+  }
+
+  .travel-card {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+  }
+
+  .travel-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .travel-card-img-placeholder {
+    background: var(--bg-surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+  }
+
+  .travel-card-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .travel-card-location {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--teal);
+    font-weight: 600;
+  }
+
+  @media (max-width: 500px) {
+    .travel-card { grid-template-columns: 1fr; }
+    .travel-card-img-placeholder { min-height: 120px; }
+  }
+</style>

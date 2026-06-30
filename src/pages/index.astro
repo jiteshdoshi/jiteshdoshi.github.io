@@ -1,0 +1,333 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const travels = (await getCollection('travel', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 1);
+
+function formatDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+---
+
+<BaseLayout title="Home">
+
+  <!-- ── HERO ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-inner">
+
+        <div class="hero-badge">
+          <span class="tag tag-teal">Available for collaborations &amp; consulting</span>
+        </div>
+
+        <h1 class="display hero-name">Jitesh Doshi</h1>
+
+        <p class="hero-roles">
+          <span class="role-prefix">I'm a </span>
+          <span id="role-text">AI Scientist</span>
+        </p>
+
+        <p class="hero-tagline">
+          Senior Research Scientist at Peptris Technologies — building AI tools for drug discovery,
+          teaching computational biology across India, and walking up mountains whenever possible.
+        </p>
+
+        <div class="hero-ctas">
+          <a href="/resume" class="btn btn-primary">
+            See my work
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a href="/blog" class="btn btn-secondary">Read the blog</a>
+        </div>
+
+        <div class="social-row hero-socials">
+          <a href="https://github.com/jiteshdoshi" target="_blank" rel="noopener" class="social-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+            GitHub
+          </a>
+          <a href="https://www.linkedin.com/in/jiteshvdoshi/" target="_blank" rel="noopener" class="social-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+          </a>
+          <a href="mailto:jiteshvdoshi@gmail.com" class="social-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PILLARS ────────────────────────────────────────────── -->
+  <section class="section" style="background: var(--bg-surface);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">What I do</span>
+        <h2>Four dimensions of one curious life</h2>
+      </div>
+
+      <div class="grid-4">
+
+        <a href="/resume" class="card card-link pillar-card">
+          <div class="pillar-icon teal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v11m0 0H5a2 2 0 0 1-2-2V9m6 5h10a2 2 0 0 0 2-2V9m0 0H5"/></svg>
+          </div>
+          <h3>Drug Discovery Scientist</h3>
+          <p>Generative models for drug design, molecular simulations, and ML for target discovery at Peptris.</p>
+          <span class="btn btn-ghost">View resume →</span>
+        </a>
+
+        <a href="/travel" class="card card-link pillar-card">
+          <div class="pillar-icon accent">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          </div>
+          <h3>Explorer</h3>
+          <p>Western Ghats, Himalayas, desert plateaus — chasing wild places and the clarity they bring.</p>
+          <span class="btn btn-ghost">Travel logs →</span>
+        </a>
+
+        <a href="/courses" class="card card-link pillar-card">
+          <div class="pillar-icon teal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <h3>Educator</h3>
+          <p>Making computational drug discovery accessible through courses, videos, and plain-language writing.</p>
+          <span class="btn btn-ghost">Courses →</span>
+        </a>
+
+        <a href="/media" class="card card-link pillar-card">
+          <div class="pillar-icon accent">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </div>
+          <h3>Creator</h3>
+          <p>YouTube explainers, talks, and media at the intersection of science and the outdoors.</p>
+          <span class="btn btn-ghost">Watch & listen →</span>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LATEST POSTS ───────────────────────────────────────── -->
+  {posts.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section-header" style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <span class="section-label">From the blog</span>
+            <h2 style="margin:0;">Latest writing</h2>
+          </div>
+          <a href="/blog" class="btn btn-ghost">All posts →</a>
+        </div>
+
+        <div class="grid-3">
+          {posts.map(post => (
+            <a href={`/blog/${post.slug}`} class="post-card card-link">
+              <div class="post-card-body">
+                <div class="post-card-meta">
+                  <time datetime={post.data.pubDate.toISOString()}>
+                    {formatDate(post.data.pubDate)}
+                  </time>
+                </div>
+                <div class="post-card-title">{post.data.title}</div>
+                <p class="post-card-desc">{post.data.description}</p>
+                <div class="post-card-tags">
+                  {post.data.tags.slice(0, 3).map(t => (
+                    <span class="tag tag-neutral">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── TRAVEL TEASER ─────────────────────────────────────── -->
+  {travels.length > 0 && (
+    <section class="section" style="background: var(--bg-surface);">
+      <div class="container">
+        <span class="section-label">From the trail</span>
+        <div class="travel-teaser">
+          <div>
+            <h2>{travels[0].data.title}</h2>
+            <p class="travel-meta">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {travels[0].data.location}
+              &nbsp;·&nbsp;
+              <time>{formatDate(travels[0].data.pubDate)}</time>
+            </p>
+            <p style="color: var(--text-muted); max-width: 52ch;">{travels[0].data.description}</p>
+            <a href={`/travel/${travels[0].slug}`} class="btn btn-secondary" style="margin-top: 0.5rem;">
+              Read the log →
+            </a>
+          </div>
+          <div class="travel-tags">
+            {travels[0].data.tags.map(t => (
+              <span class="tag tag-teal">{t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── NEWSLETTER ─────────────────────────────────────────── -->
+  <section class="section">
+    <div class="container">
+      <div class="newsletter-band">
+        <span class="section-label">Stay in the loop</span>
+        <h2 style="margin:0.5rem 0 0.75rem;">Science, trails, and ideas — monthly</h2>
+        <p style="color: var(--text-muted); max-width: 46ch; margin: 0 auto;">
+          No spam. Occasional deep-dives on AI + drug discovery, travel stories, and whatever I'm reading.
+        </p>
+        <form class="newsletter-form" onsubmit="return false;">
+          <input type="email" placeholder="your@email.com" aria-label="Email address" />
+          <button type="submit" class="btn btn-primary">Subscribe</button>
+        </form>
+        <p style="font-size:0.8rem; color: var(--text-subtle); margin-top:0.75rem;">
+          Unsubscribe any time. Your email stays with me.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .hero-inner {
+    max-width: 760px;
+  }
+
+  .hero-badge {
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-name {
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-roles {
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0 0 1.5rem;
+  }
+
+  .hero-tagline {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 56ch;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-socials {
+    margin-top: 0.5rem;
+  }
+
+  /* Pillar cards */
+  .pillar-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .pillar-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pillar-icon.teal {
+    background: var(--teal-light);
+    color: var(--teal);
+  }
+
+  .pillar-icon.accent {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .pillar-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .pillar-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    flex: 1;
+    margin: 0;
+  }
+
+  /* Travel teaser */
+  .travel-teaser {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .travel-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0.4rem 0 0.75rem;
+  }
+
+  .travel-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-self: center;
+  }
+</style>
+
+<script>
+  const roles = [
+    'AI Scientist',
+    'Explorer',
+    'Science Educator',
+    'Drug Discovery Researcher',
+    'Creator',
+    'Observer',
+  ];
+  let idx = 0;
+  const el = document.getElementById('role-text');
+  if (el) {
+    setInterval(() => {
+      el.classList.add('fading');
+      setTimeout(() => {
+        idx = (idx + 1) % roles.length;
+        el.textContent = roles[idx];
+        el.classList.remove('fading');
+      }, 350);
+    }, 2800);
+  }
+</script>

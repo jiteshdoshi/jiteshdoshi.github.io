@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+function formatDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+const allTags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
+---
+
+<BaseLayout
+  title="Blog"
+  description="Writing by Jitesh Doshi on AI, computational drug discovery, molecular science, and the ideas that connect them."
+>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-label">Writing</span>
+      <h1>Blog</h1>
+      <p class="page-sub">
+        Deep-dives on generative AI, drug discovery, tools I'm building, and the occasional idea that doesn't fit anywhere else.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+
+      {allTags.length > 0 && (
+        <div class="tag-filter" style="margin-bottom:2.5rem;">
+          <a href="/blog" class="tag tag-accent">All</a>
+          {allTags.map(t => (
+            <span class="tag tag-neutral" style="cursor:pointer;">{t}</span>
+          ))}
+        </div>
+      )}
+
+      {posts.length === 0 ? (
+        <div class="empty-state">
+          <p>No posts yet — check back soon.</p>
+        </div>
+      ) : (
+        <div class="grid-3">
+          {posts.map(post => (
+            <a href={`/blog/${post.slug}`} class="post-card card-link">
+              <div class="post-card-body">
+                <div class="post-card-meta">
+                  <time datetime={post.data.pubDate.toISOString()}>
+                    {formatDate(post.data.pubDate)}
+                  </time>
+                </div>
+                <div class="post-card-title">{post.data.title}</div>
+                <p class="post-card-desc">{post.data.description}</p>
+                <div class="post-card-tags">
+                  {post.data.tags.slice(0, 3).map(t => (
+                    <span class="tag tag-neutral">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 5rem 0 3rem;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 40%, rgba(184,134,11,0.07) 0%, transparent 60%),
+      var(--bg);
+  }
+  .page-sub { font-size:1.1rem; color:var(--text-muted); max-width:52ch; margin-top:0.75rem; }
+  .tag-filter { display:flex; flex-wrap:wrap; gap:0.5rem; }
+  .empty-state { text-align:center; padding:4rem 0; color:var(--text-muted); }
+</style>

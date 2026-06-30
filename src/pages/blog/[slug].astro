@@ -1,0 +1,101 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map(post => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+
+function formatDate(d: Date) {
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+
+  <article>
+    <header class="post-header">
+      <div class="container">
+        <a href="/blog" class="back-link">← Back to blog</a>
+        <div class="post-header-tags">
+          {post.data.tags.map(t => <span class="tag tag-accent">{t}</span>)}
+        </div>
+        <h1 class="post-title">{post.data.title}</h1>
+        <p class="post-desc">{post.data.description}</p>
+        <time class="post-date" datetime={post.data.pubDate.toISOString()}>
+          {formatDate(post.data.pubDate)}
+        </time>
+      </div>
+    </header>
+
+    <div class="container post-body">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+  </article>
+
+  <section class="section-sm">
+    <div class="container" style="text-align:center; border-top:1px solid var(--border); padding-top:2rem;">
+      <p style="color:var(--text-muted); margin-bottom:1rem;">Enjoyed this? Share it or say hello.</p>
+      <div style="display:flex; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
+        <a href="/blog" class="btn btn-secondary">← More posts</a>
+        <a href="/connect" class="btn btn-primary">Get in touch</a>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .post-header {
+    padding: 4rem 0 3rem;
+    background:
+      radial-gradient(ellipse 70% 50% at 70% 30%, rgba(184,134,11,0.06) 0%, transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .back-link {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-link:hover { color: var(--accent); }
+
+  .post-header-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .post-title {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    margin-bottom: 0.75rem;
+  }
+
+  .post-desc {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 60ch;
+    margin-bottom: 1rem;
+  }
+
+  .post-date {
+    font-size: 0.875rem;
+    color: var(--text-subtle);
+    display: block;
+  }
+
+  .post-body {
+    padding: 3rem 0;
+  }
+</style>
